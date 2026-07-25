@@ -33,6 +33,12 @@ export type Template = {
   supportsMusic: boolean;
   soldCount: number;
   statusBadge: StatusBadge | null;
+  /**
+   * Exactly three short selling points, shown with check icons on the catalogue
+   * card (design brief §4). Every bullet must describe something the template
+   * actually does: §5 forbids listing features a product does not have.
+   */
+  features: [string, string, string];
   description: string;
 };
 
@@ -52,6 +58,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 9,
     statusBadge: "NEW",
+    features: [
+      "Animasi 3D yang bisa diputar dan di-zoom",
+      "Pesan custom melayang di dalam scene",
+      "Musik latar pilihanmu",
+    ],
     description:
       "Animasi 3D hati yang berputar dengan pesan cinta, diiringi musik latar. Ucapan singkat yang elegan tanpa perlu foto.",
   },
@@ -69,6 +80,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 12,
     statusBadge: "NEW",
+    features: [
+      "Ratusan hati metalik melayang di ruang 3D",
+      "Bisa diputar dan dicubit untuk memperbesar",
+      "Musik latar pilihanmu",
+    ],
     description:
       "Animasi 3D hati metalik yang melayang lembut, diiringi musik latar. Ucapan singkat yang elegan tanpa perlu foto.",
   },
@@ -86,6 +102,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 34,
     statusBadge: null,
+    features: [
+      "Kotak musik terbuka dengan animasi lembut",
+      "Catatan diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template kotak musik digital yang terbuka dengan animasi lembut, menampilkan foto kenangan diiringi musik latar.",
   },
@@ -103,6 +124,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 33,
     statusBadge: null,
+    features: [
+      "Lepaskan lampion satu per satu ke langit malam",
+      "Tiap lampion membawa satu doa dan satu foto",
+      "Halaman penutup dengan pesan yang diketik",
+    ],
     description:
       "Template interaktif melepas lampion ke langit malam, menampilkan foto kenangan dan pesan harapan.",
   },
@@ -120,6 +146,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 28,
     statusBadge: null,
+    features: [
+      "5 bintang kenangan yang bisa disentuh satu per satu",
+      "Tanggal mengikuti hari saat halaman dibuka",
+      "Musik latar pilihanmu",
+    ],
     description:
       "Template langit malam interaktif. Setiap bintang menyimpan satu foto kenangan yang bisa disentuh satu per satu.",
   },
@@ -137,6 +168,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 18,
     statusBadge: "NEW",
+    features: [
+      "Ketuk botol untuk membuka gulungan surat",
+      "Pilihan suasana senja atau malam",
+      "Surat diketik plus foto polaroid",
+    ],
     description:
       "Template interaktif botol pesan yang terombang-ambing di laut. Buka untuk menemukan foto dan surat di dalamnya.",
   },
@@ -154,6 +190,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 15,
     statusBadge: "NEW",
+    features: [
+      "6 kartu yang digosok pakai jari",
+      "Tiap kartu menyimpan satu foto dan satu kenangan",
+      "Surat penutup setelah semua kartu terbuka",
+    ],
     description:
       "Kartu gosok interaktif. Setiap kartu menyimpan satu foto dan satu kenangan yang baru terlihat setelah digosok.",
   },
@@ -171,6 +212,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 26,
     statusBadge: null,
+    features: [
+      "Amplop terbuka diiringi kelopak berguguran",
+      "Surat diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template surat digital bergaya botanical, cocok untuk mengungkapkan perasaan lewat kata-kata, lengkap dengan foto kenangan dan musik latar.",
   },
@@ -188,6 +234,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 24,
     statusBadge: null,
+    features: [
+      "Amplop terbuka dengan ambience cahaya pantai",
+      "Surat diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template surat digital dengan palet warna coastal yang menenangkan, lengkap dengan foto kenangan dan musik latar.",
   },
@@ -205,6 +256,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 38,
     statusBadge: null,
+    features: [
+      "Amplop terbuka dengan kilau golden hour",
+      "Surat diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template surat digital dengan nuansa golden hour yang hangat, lengkap dengan foto kenangan dan musik latar.",
   },
@@ -222,6 +278,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 21,
     statusBadge: null,
+    features: [
+      "Amplop terbuka di bawah bintang berkelip",
+      "Surat diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template surat digital bertema langit malam berbintang, lengkap dengan foto kenangan dan musik latar.",
   },
@@ -239,6 +300,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 29,
     statusBadge: null,
+    features: [
+      "Amplop bersegel lilin dengan inisial pengirim",
+      "Surat diketik satu huruf demi satu",
+      "3 foto kenangan plus musik latar",
+    ],
     description:
       "Template surat digital bergaya vintage yang klasik, lengkap dengan foto kenangan dan musik latar.",
   },
@@ -256,6 +322,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 47,
     statusBadge: "POPULAR",
+    features: [
+      "Mini-game mesin capit yang benar-benar dimainkan",
+      "Hadiah berupa foto dan surat spesial",
+      "Tiket bernomor seri dengan tanggal otomatis",
+    ],
     description:
       "Mini-game mesin capit (claw machine) interaktif. Mainkan untuk membuka foto dan pesan spesial.",
   },
@@ -273,6 +344,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 45,
     statusBadge: "POPULAR",
+    features: [
+      "Putar tuas gacha untuk membuka hadiah satu per satu",
+      "Tiga jenis hadiah: lagu, surat, lalu foto",
+      "Efek suara dan partikel tanpa file tambahan",
+    ],
     description:
       "Template gacha interaktif bergaya mesin capsule toy. Tarik untuk mendapatkan foto dan pesan kenangan secara acak.",
   },
@@ -290,6 +366,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 63,
     statusBadge: "#1 TERLARIS",
+    features: [
+      "Hitung mundur otomatis ke hari ulang tahun",
+      "Tiup lilin dan geser meter cinta",
+      "6 foto, kartu cinta, dan daftar doa",
+    ],
     description:
       "Template ucapan ulang tahun premium dengan 6 foto dan musik latar, lengkap dengan hitung mundur, galeri kenangan, dan ucapan personal.",
   },
@@ -307,6 +388,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 20,
     statusBadge: null,
+    features: [
+      "Hitung mundur otomatis ke hari ulang tahun",
+      "Tiup lilin dan geser meter cinta",
+      "6 foto, kartu cinta, dan daftar doa",
+    ],
     description:
       "Template ucapan ulang tahun premium dengan 6 foto dan musik latar, lengkap dengan hitung mundur, galeri kenangan, dan ucapan personal.",
   },
@@ -324,6 +410,11 @@ export const templates: Template[] = [
     supportsMusic: true,
     soldCount: 51,
     statusBadge: "POPULAR",
+    features: [
+      "Hitung mundur otomatis ke hari ulang tahun",
+      "Tiup lilin dan geser meter cinta",
+      "6 foto, kartu cinta, dan daftar doa",
+    ],
     description:
       "Template ucapan ulang tahun premium dengan 6 foto dan musik latar, lengkap dengan hitung mundur, galeri kenangan, dan ucapan personal.",
   },

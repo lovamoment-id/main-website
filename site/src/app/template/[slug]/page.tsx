@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import DemoButton from "@/components/DemoButton";
 import {
   formatRupiah,
   getSampleImages,
@@ -98,26 +99,49 @@ export default async function TemplateDetailPage({
 
           <p className="mt-6 leading-relaxed text-text">{template.description}</p>
 
-          <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-text-muted">Slot foto</dt>
-              <dd className="text-text">{template.photoCount || "Tidak ada"}</dd>
-            </div>
-            <div>
-              <dt className="text-text-muted">Musik latar</dt>
-              <dd className="text-text">{template.supportsMusic ? "Ya" : "Tidak"}</dd>
-            </div>
-          </dl>
+          {/* Only real capabilities are listed. A template never shows a
+              feature it lacks, not even greyed out (design brief §5). */}
+          <ul className="mt-6 flex flex-col gap-3">
+            {template.features.map((feature) => (
+              <li key={feature} className="flex items-start gap-3 text-sm leading-relaxed text-text">
+                <svg
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  className="mt-1 h-4 w-4 shrink-0 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {feature}
+              </li>
+            ))}
+            {template.photoCount > 0 && (
+              <li className="flex items-start gap-3 text-sm leading-relaxed text-text">
+                <svg
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  className="mt-1 h-4 w-4 shrink-0 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {template.photoCount} slot foto yang kamu isi sendiri
+              </li>
+            )}
+          </ul>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href={template.demoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <DemoButton
+              demoUrl={template.demoUrl}
+              name={template.name}
               className="flex-1 rounded-full border border-primary/25 px-6 py-3 text-center text-sm font-semibold text-text transition-colors hover:border-primary/40"
             >
               Lihat Demo
-            </a>
+            </DemoButton>
             <a
               href={waLink(`Halo, saya mau pesan template "${template.name}" 💌`)}
               target="_blank"
