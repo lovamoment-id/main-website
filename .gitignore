@@ -1,0 +1,47 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets. Every key lives in Vercel env vars, never in the repo.
+.env
+.env.*
+!.env.example
+*.pem
+
+# Vercel
+.vercel
+
+# Per-machine Claude Code settings. .claude/settings.json is the shared one.
+.claude/settings.local.json
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Large media deliberately kept out of git history
+# ---------------------------------------------------------------------------
+
+# Secret-video assets. The feature was removed from all templates, so these
+# 76 MB files are no longer referenced by any code. Still on disk as a backup.
+*.mp4
+*.MP4
+*.mov
+*.MOV
+
+# Source music library (third-party copyrighted tracks, not our assets).
+/Music/
+
+# Archived copies of older template versions, superseded by /Template.
+/unused/
+/Template Raw/
+
+# Per-template marketing screenshots that the app no longer references. It now
+# reads sample1.jpg / sample2.jpg instead (design brief section 10). Kept on
+# disk as reference while the real per-template samples are being captured.
+site/public/templates/**/preview*.jpg

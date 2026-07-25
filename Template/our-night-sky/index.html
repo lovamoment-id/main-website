@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Our Night Sky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@500;600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     OUR NIGHT SKY  (Starmap of Our Night)
+     Single-file HTML/CSS/vanilla JS gift site.
+     Twinkling night sky + frequent random shooting stars +
+     tappable memory-stars connected as a constellation.
+     Edit only the CONFIG block below.
+     Assets (same folder): image1.jpg .. image(n).jpg  music.mp3
+     ============================================================ */
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Poppins', system-ui, sans-serif;
+    background: #05061a;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+  }
+
+  .page {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .page.hidden { display: none; }
+
+  /* shared night background */
+  .nightbg {
+    position: absolute; inset: 0;
+    background: radial-gradient(130% 100% at 50% 0%, #10204a 0%, #0a1230 46%, #05061a 100%);
+  }
+
+  /* ---------- INTRO ---------- */
+  #page-intro { text-align: center; padding: 0 26px; z-index: 2; }
+  .intro-inner { position: relative; z-index: 2; }
+  .intro-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px; font-weight: 600; line-height: 1.1;
+    letter-spacing: .5px;
+    background: linear-gradient(180deg, #fff, #cdd8ff);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(160,190,255,.25);
+  }
+  .intro-for { font-family: 'Caveat', cursive; font-size: 26px; color: #dfe6ff; margin-top: 14px; }
+  .intro-for .lbl { display: block; font-family: 'Poppins', sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #8ea0d8; margin-bottom: 2px; }
+  .intro-date { font-size: 13px; letter-spacing: 1px; color: #9fb0e0; margin-top: 20px; }
+  .intro-tap {
+    margin-top: 40px; min-height: 44px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 26px; border-radius: 40px;
+    border: 1px solid rgba(180,200,255,.35);
+    background: rgba(160,190,255,.1);
+    color: #eef2ff; font-size: 14px; letter-spacing: .4px; cursor: pointer;
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+  .intro-tap:active { transform: scale(.96); }
+  @keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 rgba(160,190,255,.25); } 50% { box-shadow: 0 0 26px 4px rgba(160,190,255,.3); } }
+
+  /* ---------- SKY ---------- */
+  .sky-parallax {
+    position: absolute; top: -6%; left: -6%; width: 112%; height: 112%;
+    will-change: transform;
+  }
+  #sky-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #constellation { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #constellation polyline { stroke: rgba(180,205,255,.28); stroke-width: 1; fill: none; }
+
+  #stars-layer { position: absolute; inset: 0; }
+  .mstar {
+    position: absolute; width: 44px; height: 44px;
+    transform: translate(-50%, -50%);
+    background: none; border: none; cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 4;
+  }
+  .mstar .core {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #fff 0%, #ffe9a8 45%, #ffb84d 100%);
+    box-shadow: 0 0 10px 3px rgba(255,214,140,.8), 0 0 22px 8px rgba(255,190,90,.45);
+    animation: starpulse 2.2s ease-in-out infinite;
+  }
+  .mstar .ring {
+    position: absolute; width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid rgba(255,214,140,.55);
+    animation: ringpulse 2.2s ease-out infinite;
+  }
+  @keyframes starpulse { 0%,100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.25); opacity: 1; } }
+  @keyframes ringpulse { 0% { transform: scale(.6); opacity: .7; } 100% { transform: scale(1.6); opacity: 0; } }
+  .mstar:active .core { transform: scale(.85); }
+
+  .sky-hint {
+    position: absolute; bottom: 84px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; font-weight: 300; color: rgba(224,232,255,.9);
+    text-shadow: 0 1px 10px rgba(0,0,0,.5); text-align: center; padding: 0 24px;
+    animation: fadePulse 2.6s ease-in-out infinite; z-index: 5; transition: opacity .5s ease;
+  }
+  @keyframes fadePulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+  .sky-hint.gone { opacity: 0; }
+
+  .sky-date {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    font-family: 'Cormorant Garamond', serif; font-size: 17px; letter-spacing: 1px;
+    color: #cdd8ff; text-align: center; padding: 0 24px; z-index: 5;
+    text-shadow: 0 1px 12px rgba(0,0,0,.5);
+  }
+
+  .music-btn {
+    position: absolute; top: 18px; right: 18px;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(200,215,255,.4); background: rgba(160,190,255,.12);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 20; font-size: 18px;
+  }
+  .music-btn:active { transform: scale(.92); }
+
+  /* ---------- MEMORY CARD OVERLAY ---------- */
+  .card-overlay {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: rgba(4,6,20,.72);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    opacity: 0; transition: opacity .35s ease;
+  }
+  .card-overlay.hidden { display: none; }
+  .card-overlay.show { opacity: 1; }
+
+  .card {
+    width: 100%; max-width: 360px;
+    background: linear-gradient(180deg, rgba(30,40,80,.92), rgba(14,20,46,.96));
+    border: 1px solid rgba(180,205,255,.22);
+    border-radius: 16px;
+    padding: 18px 18px 22px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.6);
+    transform: translateY(16px) scale(.97);
+    transition: transform .35s cubic-bezier(.2,.7,.2,1);
+    position: relative;
+  }
+  .card-overlay.show .card { transform: translateY(0) scale(1); }
+
+  .card-photo {
+    width: 100%; border-radius: 10px; display: block; margin-bottom: 14px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.4);
+  }
+  .card-title { font-family: 'Caveat', cursive; font-size: 28px; color: #ffe6b0; line-height: 1.1; }
+  .card-date { font-size: 12px; letter-spacing: 1px; color: #9fb0e0; margin: 4px 0 12px; }
+  .card-note { font-family: 'Cormorant Garamond', serif; font-size: 19px; line-height: 1.55; color: #eaf0ff; }
+  .card-close {
+    position: absolute; top: 10px; right: 10px;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid rgba(200,215,255,.3); background: rgba(255,255,255,.08);
+    color: #fff; font-size: 18px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-close:active { transform: scale(.9); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (min-width: 700px) {
+    .intro-title { font-size: 56px; }
+    .card { max-width: 400px; }
+    .card-note { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-tap, .mstar .core, .mstar .ring, .sky-hint { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= PAGE 1 : INTRO ================= -->
+  <div class="page" id="page-intro">
+    <div class="nightbg"></div>
+    <div class="intro-inner">
+      <div class="intro-title" id="intro-title"></div>
+      <div class="intro-for">
+        <span class="lbl">Untuk</span>
+        <span id="intro-for"></span>
+      </div>
+      <div class="intro-date" id="intro-date"></div>
+      <button class="intro-tap" id="intro-tap">Masuk ke langit kita ✦</button>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 2 : SKY ================= -->
+  <div class="page hidden" id="page-sky">
+    <div class="nightbg"></div>
+    <div class="sky-parallax" id="parallax">
+      <canvas id="sky-canvas"></canvas>
+      <svg id="constellation" preserveAspectRatio="none" viewBox="0 0 100 100">
+        <polyline id="constline" points=""></polyline>
+      </svg>
+      <div id="stars-layer"></div>
+    </div>
+
+    <p class="sky-hint" id="sky-hint">Ketuk bintang yang bercahaya ✦</p>
+    <div class="sky-date" id="sky-date"></div>
+    <button class="music-btn" id="music-btn" aria-label="Nyalakan / matikan musik">♪</button>
+  </div>
+
+  <!-- ================= MEMORY CARD ================= -->
+  <div class="card-overlay hidden" id="card-overlay">
+    <div class="card">
+      <button class="card-close" id="card-close" aria-label="Tutup">×</button>
+      <img class="card-photo" id="card-photo" alt="">
+      <div class="card-title" id="card-title"></div>
+      <div class="card-date" id="card-date"></div>
+      <div class="card-note" id="card-note"></div>
+    </div>
+  </div>
+
+<script>
+  "use strict";
+
+  /* ================= CONFIG — edit per order ================= */
+  var CONFIG = {
+    title:       "Our Night Sky",
+    fromName:    "Leo",
+    forName:     "Zia",
+    /* Tanggal diisi otomatis dari waktu lokal pembuka halaman. Ubah teksnya saja. */
+    dateCaptionPrefix: "Langit di atas kita",
+    musicFile:   "music.mp3",
+    imageExts:   ["jpg", "JPG", "webp", "heic", "HEIC"], // urutan format yang dicoba per foto
+
+    // Bintang kenangan. x & y dalam PERSEN (0–100) posisi di langit.
+    // Jauhkan y dari bawah (>=18 & <=64) supaya tak menutupi caption.
+    // "image" ditulis TANPA ekstensi — kode akan mencoba format di imageExts secara berurutan.
+    memories: [
+      { x: 22, y: 26, label: "You and Me",  date: "Mei 2024",  note: "Kita sering ngobrol sampai lupa waktu. Serasa Waktu milik kita.", image: "image1" },
+      { x: 44, y: 44, label: "Our Date",   date: "Juni 2025", note: "Cold drinks, Warm laughter. Aku ingin mengulang malam itu berkali-kali.",      image: "image2" },
+      { x: 68, y: 30, label: "Perjalanan Kita",  date: "2025",      note: "Kita tersesat, tapi tak pernah sendirian. Setiap tempat jadi rumah karenamu.", image: "image3" },
+      { x: 78, y: 56, label: "Hari Spesial",     date: "Feb 2026",  note: "Di bawah langit yang sama, aku janji untuk terus memilih kamu.",             image: "image4" },
+      { x: 34, y: 60, label: "Kita, Sekarang",   date: "Selamanya", note: "Bintang datang dan pergi, tapi kamu tetap yang paling terang buatku.",       image: "image5" }
+    ]
+  };
+  /* ========================================================== */
+
+  // --- image loader: tries each extension in CONFIG.imageExts in order,
+  //     stops at the first one that actually loads, calls onAllFail if none work ---
+  function loadImageWithFallback(imgEl, baseName, onAllFail) {
+    var exts = CONFIG.imageExts;
+    var idx = 0;
+    function tryNext() {
+      if (idx >= exts.length) { if (onAllFail) onAllFail(); return; }
+      imgEl.src = baseName + "." + exts[idx];
+      idx++;
+    }
+    imgEl.onerror = tryNext;
+    tryNext();
+  }
+
+  // --- tanggal hari ini, waktu lokal pembuka halaman ---
+  //     Bukan tanggal kenangan: yang itu tetap dicustom di CONFIG.memories.
+  function todayLong() {
+    var bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    var d = new Date();
+    return d.getDate() + " " + bulan[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  // ----- intro text -----
+  var dateCaption = CONFIG.dateCaptionPrefix + " • " + todayLong();
+  document.getElementById("intro-title").textContent = CONFIG.title;
+  document.getElementById("intro-for").textContent = CONFIG.forName;
+  document.getElementById("intro-date").textContent = dateCaption;
+  document.getElementById("sky-date").textContent = dateCaption;
+
+  // ----- music (mobile-safe: starts on first gesture) -----
+  var audio = new Audio(CONFIG.musicFile);
+  audio.loop = true;
+  var musicOn = false, musicOk = true;
+  var musicBtn = document.getElementById("music-btn");
+  audio.addEventListener("error", function () { musicOk = false; musicBtn.style.display = "none"; });
+  function playMusic() {
+    if (!musicOk) return;
+    var p = audio.play();
+    if (p && p.then) { p.then(function () { musicOn = true; musicBtn.textContent = "♪"; }).catch(function () {}); }
+  }
+  musicBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (!musicOk) return;
+    if (musicOn) { audio.pause(); musicOn = false; musicBtn.textContent = "♪̷"; }
+    else { playMusic(); }
+  });
+
+  // ----- build memory stars + constellation line -----
+  (function buildStars() {
+    var layer = document.getElementById("stars-layer");
+    var pts = [];
+    var html = "";
+    for (var i = 0; i < CONFIG.memories.length; i++) {
+      var m = CONFIG.memories[i];
+      pts.push(m.x + "," + m.y);
+      html += '<button class="mstar" data-i="' + i + '" style="left:' + m.x + '%;top:' + m.y +
+              '%" aria-label="' + m.label + '"><span class="ring"></span><span class="core"></span></button>';
+    }
+    layer.innerHTML = html;
+    document.getElementById("constline").setAttribute("points", pts.join(" "));
+
+    var btns = layer.querySelectorAll(".mstar");
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].addEventListener("click", function () {
+        openCard(parseInt(this.getAttribute("data-i"), 10));
+        document.getElementById("sky-hint").classList.add("gone");
+      });
+    }
+  })();
+
+  // ----- memory card -----
+  var overlay = document.getElementById("card-overlay");
+  var cardPhoto = document.getElementById("card-photo");
+
+  function openCard(i) {
+    var m = CONFIG.memories[i];
+    document.getElementById("card-title").textContent = m.label || "";
+    document.getElementById("card-date").textContent = m.date || "";
+    document.getElementById("card-note").textContent = m.note || "";
+
+    if (m.image) {
+      cardPhoto.style.display = "";
+      loadImageWithFallback(cardPhoto, m.image, function () { cardPhoto.style.display = "none"; });
+    } else {
+      cardPhoto.style.display = "none";
+    }
+
+    overlay.classList.remove("hidden");
+    requestAnimationFrame(function () { overlay.classList.add("show"); });
+  }
+  function closeCard() {
+    overlay.classList.remove("show");
+    setTimeout(function () { overlay.classList.add("hidden"); }, 350);
+  }
+  document.getElementById("card-close").addEventListener("click", closeCard);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) closeCard(); });
+
+  /* ================= CANVAS SKY ================= */
+  var canvas = document.getElementById("sky-canvas");
+  var ctx = canvas.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  var bgStars = [];
+  var shooters = [];
+  var running = false;
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sizeCanvas() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    seedStars();
+  }
+
+  function seedStars() {
+    bgStars = [];
+    var count = Math.round((W * H) / 6500); // density scales with screen
+    if (count < 90) count = 90;
+    if (count > 220) count = 220;
+    for (var i = 0; i < count; i++) {
+      bgStars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.3 + 0.3,
+        base: Math.random() * 0.5 + 0.35,
+        sp: Math.random() * 0.9 + 0.3,
+        ph: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  // --- shooting stars: random + frequent ---
+  function spawnShooter() {
+    var startX = Math.random() * W * 0.9;
+    var startY = Math.random() * H * 0.4;               // upper part of sky
+    var angle = (Math.random() * 25 + 20) * Math.PI / 180; // 20–45° downward
+    var speed = Math.random() * 7 + 8;
+    shooters.push({
+      x: startX, y: startY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      len: Math.random() * 90 + 70,
+      life: 1
+    });
+  }
+
+  function scheduleShooter() {
+    if (!running) return;
+    // frequent: mostly short gaps, occasional double
+    var delay = Math.random() * 1300 + 500; // 0.5s – 1.8s
+    setTimeout(function () {
+      if (!running) return;
+      spawnShooter();
+      if (Math.random() < 0.25) { spawnShooter(); } // sometimes two at once
+      scheduleShooter();
+    }, reduceMotion ? delay * 2.5 : delay);
+  }
+
+  function draw(t) {
+    if (!running) return;
+    ctx.clearRect(0, 0, W, H);
+
+    // twinkling background stars
+    for (var i = 0; i < bgStars.length; i++) {
+      var s = bgStars[i];
+      var a = s.base + Math.sin(t / 1000 * s.sp + s.ph) * 0.35;
+      if (a < 0.05) a = 0.05;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
+      ctx.fill();
+    }
+
+    // shooting stars
+    for (var k = shooters.length - 1; k >= 0; k--) {
+      var sh = shooters[k];
+      sh.x += sh.vx; sh.y += sh.vy; sh.life -= 0.012;
+      var tailX = sh.x - sh.vx * (sh.len / 10);
+      var tailY = sh.y - sh.vy * (sh.len / 10);
+      var grad = ctx.createLinearGradient(sh.x, sh.y, tailX, tailY);
+      grad.addColorStop(0, "rgba(255,255,255," + Math.max(sh.life, 0).toFixed(2) + ")");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(tailX, tailY);
+      ctx.stroke();
+      // bright head
+      ctx.beginPath();
+      ctx.arc(sh.x, sh.y, 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255," + Math.max(sh.life, 0).toFixed(2) + ")";
+      ctx.fill();
+
+      if (sh.life <= 0 || sh.x > W + 120 || sh.y > H + 120) { shooters.splice(k, 1); }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function startSky() {
+    sizeCanvas();
+    if (running) return;
+    running = true;
+    requestAnimationFrame(draw);
+    scheduleShooter();
+  }
+
+  window.addEventListener("resize", function () { if (running) sizeCanvas(); });
+
+  // ----- subtle parallax (pointer + gentle auto drift) -----
+  var parallax = document.getElementById("parallax");
+  var px = 0, py = 0, tx = 0, ty = 0;
+  window.addEventListener("pointermove", function (e) {
+    tx = (e.clientX / window.innerWidth - 0.5) * 16;
+    ty = (e.clientY / window.innerHeight - 0.5) * 16;
+  });
+  (function drift() {
+    var t = Date.now() / 3000;
+    var ax = Math.sin(t) * 5, ay = Math.cos(t * 0.8) * 4;
+    px += ((tx + ax) - px) * 0.05;
+    py += ((ty + ay) - py) * 0.05;
+    parallax.style.transform = "translate(" + px.toFixed(2) + "px," + py.toFixed(2) + "px)";
+    requestAnimationFrame(drift);
+  })();
+
+  // ----- enter the sky (debounced) -----
+  var entered = false;
+  document.getElementById("intro-tap").addEventListener("click", function () {
+    if (entered) return;
+    entered = true;
+    playMusic();
+    document.getElementById("page-intro").classList.add("hidden");
+    document.getElementById("page-sky").classList.remove("hidden");
+    // let layout settle so canvas gets real dimensions
+    setTimeout(startSky, 50);
+  });
+</script>
+</body>
+</html>

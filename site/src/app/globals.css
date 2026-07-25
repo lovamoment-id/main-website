@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/* Brand: rose & gold. Tokens are the single source of truth (design brief §1).
+   Two accents (primary, accent) plus one neutral ramp. Do not add more hues. */
+:root {
+  --primary: #9e3b52;
+  --accent: #c89b6a;
+  --bg: #fdf6f4;
+  --surface: #ffffff;
+  --text: #3a2a2e;
+  --text-muted: #7a6167;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+
+  --shadow-sm: 0 1px 2px rgba(90, 40, 52, 0.06);
+  --shadow-lg: 0 8px 24px rgba(90, 40, 52, 0.08);
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-lg: var(--shadow-lg);
+
+  --font-display: var(--font-serif);
+  --font-sans: var(--font-body);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Belt marquee (design brief §3b). Two identical runs sit side by side, so
+   shifting the track by exactly half its width loops without a visible seam.
+   transform only, no layout properties, per the motion rules in §8. */
+@keyframes belt-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-belt {
+  animation: belt-scroll 32s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-belt {
+    animation: none;
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--text);
+}

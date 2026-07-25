@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Floating Metallic Hearts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #030711;
+  font-family: 'Jost', Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% 40%, #12305e 0%, #0a1836 45%, #030711 100%);
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------- Loading + gate ---------- */
+#gate {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background:
+    radial-gradient(circle at 50% 50%, #14315f 0%, #0a1734 60%, #04060f 100%);
+  transition: opacity 900ms ease;
+  opacity: 1;
+}
+
+#gate.fade-out {
+  opacity: 0;
+}
+
+.gate-mark {
+  width: 34px;
+  height: 34px;
+  transform: rotate(-45deg);
+  background: linear-gradient(145deg, #cfe6ff, #5b8fd6);
+  position: relative;
+  border-radius: 3px;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.gate-mark::before,
+.gate-mark::after {
+  content: "";
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #cfe6ff, #5b8fd6);
+}
+
+.gate-mark::before { top: -17px; left: 0; }
+.gate-mark::after { top: 0; right: -17px; }
+
+@keyframes pulse {
+  0%, 100% { transform: rotate(-45deg) scale(1); }
+  50% { transform: rotate(-45deg) scale(1.12); }
+}
+
+.gate-title {
+  font-family: 'Italiana', serif;
+  font-size: 30px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #dcecff;
+}
+
+.bar {
+  width: 190px;
+  height: 1px;
+  background: rgba(214, 232, 255, 0.18);
+  overflow: hidden;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #5b8fd6, #cfe6ff);
+  transition: width 200ms linear;
+}
+
+.gate-status {
+  font-size: 11px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(214, 232, 255, 0.55);
+  font-weight: 300;
+}
+
+#gate-prompt {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(214, 232, 255, 0.8);
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* ---------- Scene UI ---------- */
+#ui {
+  opacity: 0;
+  transition: opacity 1200ms ease;
+}
+
+#ui.visible {
+  opacity: 1;
+}
+
+.info {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(214, 232, 255, 0.45);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  font-weight: 300;
+}
+
+#mute-btn {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(214, 232, 255, 0.25);
+  background: rgba(8, 18, 38, 0.55);
+  color: #dcecff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0;
+}
+
+#mute-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+#mute-btn:focus-visible {
+  outline: 2px solid #cfe6ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .gate-title { font-size: 24px; }
+  .info { font-size: 10px; bottom: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-mark, #gate-prompt { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div class="info">
+    <p id="info-text">Geser untuk memutar &nbsp;•&nbsp; Cubit untuk memperbesar</p>
+  </div>
+  <button id="mute-btn" type="button" aria-label="Matikan musik">
+    <svg id="icon-on" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9v6h4l5 5V4L8 9H4zm12.5 3c0-1.8-1-3.3-2.5-4v8c1.5-.7 2.5-2.2 2.5-4zM14 2.2v2.1c2.9.9 5 3.5 5 6.7s-2.1 5.8-5 6.7v2.1c4-1 7-4.5 7-8.8s-3-7.8-7-8.8z"/>
+    </svg>
+    <svg id="icon-off" class="hidden" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9v6h4l5 5V4L8 9H4zm16.5 0L19 7.5 16.5 10 14 7.5 12.5 9l2.5 2.5-2.5 2.5 1.5 1.5 2.5-2.5 2.5 2.5 1.5-1.5-2.5-2.5L20.5 9z"/>
+    </svg>
+  </button>
+</div>
+
+<div id="gate">
+  <div class="gate-mark"></div>
+  <div class="gate-title">For my Zia</div>
+  <div class="bar"><span id="bar-fill"></span></div>
+  <div class="gate-status" id="gate-status">Memuat 0%</div>
+  <div id="gate-prompt" class="hidden">Ketuk di mana saja untuk membuka</div>
+</div>
+
+<audio id="bg-music" loop preload="auto"></audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================
+   CONFIG — edit per order
+   ========================================================= */
+var CONFIG = {
+  CENTER_TEXT: "Love you",
+  GATE_TITLE: "For my Zia",
+  GATE_PROMPT: "Ketuk di mana saja untuk membuka",
+  MUSIC_FILE: "music.mp3",
+  MUSIC_VOLUME: 0.6,
+  HEART_COUNT_DESKTOP: 150,
+  HEART_COUNT_MOBILE: 100,
+  CAMERA_START_Z: 80,
+  ZOOM_MIN: 26,
+  ZOOM_MAX: 170,
+  TEXT_MAX_WIDTH: 62
+};
+
+document.querySelector(".gate-title").textContent = CONFIG.GATE_TITLE;
+document.getElementById("gate-prompt").textContent = CONFIG.GATE_PROMPT;
+
+var IS_MOBILE = window.matchMedia("(max-width: 768px)").matches;
+var HEART_COUNT = IS_MOBILE ? CONFIG.HEART_COUNT_MOBILE : CONFIG.HEART_COUNT_DESKTOP;
+
+/* =========================================================
+   Scene
+   ========================================================= */
+var canvas = document.getElementById("canvas");
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+camera.position.z = CONFIG.CAMERA_START_Z;
+
+/* ---------- Studio environment so metal actually reflects ---------- */
+function buildEnvironment() {
+  var c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 256;
+  var g = c.getContext("2d");
+
+  var grad = g.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0.0, "#dceeff");
+  grad.addColorStop(0.35, "#3f6ecb");
+  grad.addColorStop(0.6, "#1c3a86");
+  grad.addColorStop(1.0, "#060f28");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 256);
+
+  // soft key lights that read as highlights on the metal
+  var spots = [
+    { x: 110, y: 70, r: 90, c: "rgba(225,240,255,0.95)" },
+    { x: 380, y: 55, r: 70, c: "rgba(150,195,255,0.8)" },
+    { x: 260, y: 200, r: 110, c: "rgba(80,130,240,0.45)" }
+  ];
+  for (var i = 0; i < spots.length; i++) {
+    var s = spots[i];
+    var rg = g.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+    rg.addColorStop(0, s.c);
+    rg.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = rg;
+    g.fillRect(s.x - s.r, s.y - s.r, s.r * 2, s.r * 2);
+  }
+
+  var tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.encoding = THREE.sRGBEncoding;
+
+  var cubeRT = new THREE.WebGLCubeRenderTarget(256);
+  cubeRT.fromEquirectangularTexture(renderer, tex);
+  return cubeRT.texture;
+}
+
+var envMap = buildEnvironment();
+scene.environment = envMap;
+
+/* ---------- Lighting ---------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+
+var keyLight = new THREE.PointLight(0xdaeaff, 1.6, 400);
+keyLight.position.set(60, 60, 70);
+scene.add(keyLight);
+
+var rimLight = new THREE.PointLight(0x4d78ff, 1.4, 400);
+rimLight.position.set(-70, -40, 40);
+scene.add(rimLight);
+
+var fillLight = new THREE.DirectionalLight(0x7fd0ff, 0.35);
+fillLight.position.set(-30, 50, -60);
+scene.add(fillLight);
+
+/* =========================================================
+   Heart geometry + metallic materials
+   ========================================================= */
+function buildHeartGeometry() {
+  var s = new THREE.Shape();
+  s.moveTo(0.5, 0.5);
+  s.bezierCurveTo(0.5, 0.5, 0.4, 0, 0, 0);
+  s.bezierCurveTo(-0.6, 0, -0.6, 0.7, -0.6, 0.7);
+  s.bezierCurveTo(-0.6, 1.1, -0.3, 1.54, 0.5, 1.9);
+  s.bezierCurveTo(1.2, 1.54, 1.6, 1.1, 1.6, 0.7);
+  s.bezierCurveTo(1.6, 0.7, 1.6, 0, 1.0, 0);
+  s.bezierCurveTo(0.7, 0, 0.5, 0.5, 0.5, 0.5);
+
+  var geo = new THREE.ExtrudeGeometry(s, {
+    depth: 0.55,
+    bevelEnabled: true,
+    bevelSegments: 4,
+    bevelSize: 0.18,
+    bevelThickness: 0.16,
+    curveSegments: 14
+  });
+  geo.center();
+  geo.rotateZ(Math.PI);
+  return geo;
+}
+
+var heartGeometry = buildHeartGeometry();
+
+var metals = [
+  { name: "sapphire", color: 0x2f6bff, rough: 0.14 },
+  { name: "azure-chrome", color: 0x5fa3ff, rough: 0.16 },
+  { name: "steel-blue", color: 0x8fb8e6, rough: 0.2 },
+  { name: "ice", color: 0xcfe6ff, rough: 0.1 },
+  { name: "cobalt", color: 0x1f3fb0, rough: 0.18 },
+  { name: "teal-chrome", color: 0x3fc7d6, rough: 0.16 }
+];
+
+var materials = metals.map(function (m) {
+  return new THREE.MeshStandardMaterial({
+    color: m.color,
+    metalness: 1.0,
+    roughness: m.rough,
+    envMap: envMap,
+    envMapIntensity: 1.5
+  });
+});
+
+/* ---------- Heart cloud ---------- */
+var heartGroup = new THREE.Group();
+scene.add(heartGroup);
+
+function generateHeartCloud() {
+  for (var i = 0; i < HEART_COUNT; i++) {
+    var angle = Math.random() * Math.PI * 2;
+    var radius = Math.pow(Math.random(), 0.65) * 80;
+    var x = Math.cos(angle) * radius;
+    var y = Math.sin(angle) * radius * 0.85 + (Math.random() * 30 - 15);
+    var z = (Math.random() - 0.5) * 70;
+
+    if (Math.sqrt(x * x + y * y) > 90) { continue; }
+
+    var mat = materials[Math.floor(Math.random() * materials.length)];
+    var mesh = new THREE.Mesh(heartGeometry, mat);
+
+    var scale = 1.4 + Math.random() * 3.4;
+    mesh.scale.set(scale, scale, scale);
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+
+    mesh.userData.originalPos = { x: x, y: y, z: z };
+    mesh.userData.time = Math.random() * Math.PI * 2;
+    mesh.userData.speed = 0.004 + Math.random() * 0.009;
+    mesh.userData.amplitudeX = 1.5 + Math.random() * 3;
+    mesh.userData.amplitudeY = 1.5 + Math.random() * 3;
+    mesh.userData.amplitudeZ = 1.5 + Math.random() * 3;
+    mesh.userData.spinX = (Math.random() - 0.5) * 0.006;
+    mesh.userData.spinY = (Math.random() - 0.5) * 0.008;
+
+    heartGroup.add(mesh);
+  }
+}
+
+generateHeartCloud();
+
+/* =========================================================
+   Starfield — a deep galaxy backdrop behind the hearts.
+   Two layers: distant white stars + a coloured nebula haze,
+   both far enough back that zooming never reaches them.
+   ========================================================= */
+var starField = new THREE.Group();
+scene.add(starField);
+
+function makeStarTexture(inner) {
+  var c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 64;
+  var g = c.getContext("2d");
+  var rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  rg.addColorStop(0, inner);
+  rg.addColorStop(0.25, "rgba(255,255,255,0.55)");
+  rg.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = rg;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
+function buildStarLayer(count, spread, size, texture, opacity) {
+  var geo = new THREE.BufferGeometry();
+  var positions = new Float32Array(count * 3);
+  for (var i = 0; i < count; i++) {
+    // scatter on a shell far behind the scene so zoom never reaches it
+    var r = spread * (0.7 + Math.random() * 0.3);
+    var theta = Math.random() * Math.PI * 2;
+    var phi = Math.acos(2 * Math.random() - 1);
+    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = -Math.abs(r * Math.cos(phi)) - 200;
+  }
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  var mat = new THREE.PointsMaterial({
+    size: size,
+    map: texture,
+    transparent: true,
+    opacity: opacity,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    sizeAttenuation: true
+  });
+  return new THREE.Points(geo, mat);
+}
+
+var whiteStarTex = makeStarTexture("rgba(255,255,255,1)");
+var blueStarTex = makeStarTexture("rgba(180,215,255,1)");
+
+starField.add(buildStarLayer(900, 900, 6, whiteStarTex, 0.9));
+starField.add(buildStarLayer(500, 700, 10, blueStarTex, 0.7));
+starField.add(buildStarLayer(180, 950, 20, blueStarTex, 0.45));
+
+/* Nebula clouds — big soft coloured sprites for galaxy depth */
+function makeNebulaTexture(color) {
+  var c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 256;
+  var g = c.getContext("2d");
+  var rg = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rg.addColorStop(0, color);
+  rg.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = rg;
+  g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+
+var nebulaColors = [
+  "rgba(60,110,230,0.5)",
+  "rgba(120,70,220,0.4)",
+  "rgba(40,150,200,0.4)"
+];
+
+for (var n = 0; n < 7; n++) {
+  var tex = makeNebulaTexture(nebulaColors[n % nebulaColors.length]);
+  var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    opacity: 0.6
+  }));
+  var scale = 260 + Math.random() * 320;
+  sprite.scale.set(scale, scale, 1);
+  sprite.position.set(
+    (Math.random() - 0.5) * 900,
+    (Math.random() - 0.5) * 700,
+    -450 - Math.random() * 250
+  );
+  starField.add(sprite);
+}
+
+/* =========================================================
+   Center text — lives INSIDE the scene, so hearts in front of it
+   physically cover it up
+   ========================================================= */
+var TEXT_FONT = "160px 'Italiana', Georgia, serif";
+var TEXT_PAD = 90;
+
+var textCanvas = document.createElement("canvas");
+textCanvas.width = 1024;
+textCanvas.height = 320;
+var textTexture = new THREE.CanvasTexture(textCanvas);
+textTexture.encoding = THREE.sRGBEncoding;
+var textAspect = 4;
+
+function drawCenterText() {
+  var g = textCanvas.getContext("2d");
+
+  // measure first, then fit the canvas to the text so the plane
+  // never has to stretch to cover empty space
+  g.font = TEXT_FONT;
+  var measured = g.measureText(CONFIG.CENTER_TEXT).width;
+  textCanvas.width = Math.max(256, Math.ceil(measured + TEXT_PAD * 2));
+  textCanvas.height = 320;
+  textAspect = textCanvas.width / textCanvas.height;
+
+  g.clearRect(0, 0, textCanvas.width, textCanvas.height);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.font = TEXT_FONT;
+  g.shadowColor = "rgba(120, 175, 255, 0.9)";
+  g.shadowBlur = 40;
+  g.fillStyle = "#eaf3ff";
+  g.fillText(CONFIG.CENTER_TEXT, textCanvas.width / 2, textCanvas.height / 2);
+  g.shadowBlur = 0;
+  g.fillText(CONFIG.CENTER_TEXT, textCanvas.width / 2, textCanvas.height / 2);
+
+  textTexture.needsUpdate = true;
+}
+
+drawCenterText();
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function () {
+    drawCenterText();
+    sizeCenterText();
+  });
+}
+
+var textMaterial = new THREE.MeshBasicMaterial({
+  map: textTexture,
+  transparent: true,
+  depthTest: true,
+  depthWrite: false,
+  opacity: 0.95
+});
+
+var centerText = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), textMaterial);
+centerText.renderOrder = 2;
+scene.add(centerText);
+
+function sizeCenterText() {
+  var visibleHeight = 2 * Math.tan((75 * Math.PI / 180) / 2) * CONFIG.CAMERA_START_Z;
+  var visibleWidth = visibleHeight * (window.innerWidth / window.innerHeight);
+  var width = Math.min(CONFIG.TEXT_MAX_WIDTH, visibleWidth * 0.8);
+  // height derived from the canvas aspect — keeps the letters unstretched
+  centerText.scale.set(width, width / textAspect, 1);
+}
+
+sizeCenterText();
+
+/* =========================================================
+   Interaction — rotate, pinch zoom, wheel zoom
+   ========================================================= */
+var targetRotationX = 0;
+var targetRotationY = 0;
+var currentRotationX = 0;
+var currentRotationY = 0;
+var targetZoom = CONFIG.CAMERA_START_Z;
+
+var isDragging = false;
+var lastX = 0;
+var lastY = 0;
+var pinchStartDist = 0;
+var pinchStartZoom = 0;
+
+function clampZoom(v) {
+  return Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.ZOOM_MAX, v));
+}
+
+canvas.addEventListener("mousedown", function (e) {
+  isDragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+
+window.addEventListener("mouseup", function () {
+  isDragging = false;
+});
+
+window.addEventListener("mousemove", function (e) {
+  if (!isDragging) { return; }
+  targetRotationY += (e.clientX - lastX) * 0.005;
+  targetRotationX += (e.clientY - lastY) * 0.005;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  markActive();
+});
+
+canvas.addEventListener("wheel", function (e) {
+  e.preventDefault();
+  targetZoom = clampZoom(targetZoom + e.deltaY * 0.08);
+  markActive();
+}, { passive: false });
+
+canvas.addEventListener("touchstart", function (e) {
+  if (e.touches.length === 1) {
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    pinchStartDist = touchDistance(e.touches);
+    pinchStartZoom = targetZoom;
+  }
+}, { passive: true });
+
+canvas.addEventListener("touchmove", function (e) {
+  if (e.touches.length === 1) {
+    targetRotationY += (e.touches[0].clientX - lastX) * 0.006;
+    targetRotationX += (e.touches[0].clientY - lastY) * 0.006;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    var d = touchDistance(e.touches);
+    if (pinchStartDist > 0) {
+      targetZoom = clampZoom(pinchStartZoom * (pinchStartDist / d));
+    }
+  }
+  markActive();
+  e.preventDefault();
+}, { passive: false });
+
+function touchDistance(touches) {
+  var dx = touches[0].clientX - touches[1].clientX;
+  var dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy) || 1;
+}
+
+/* ---------- Idle auto-rotate ---------- */
+var isIdle = true;
+var idleTimer = null;
+
+function markActive() {
+  isIdle = false;
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(function () { isIdle = true; }, 3000);
+}
+
+/* =========================================================
+   Render loop
+   ========================================================= */
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (isIdle) {
+    targetRotationY += 0.0018;
+    targetRotationX += 0.0004;
+  }
+
+  currentRotationX += (targetRotationX - currentRotationX) * 0.05;
+  currentRotationY += (targetRotationY - currentRotationY) * 0.05;
+
+  heartGroup.rotation.x = currentRotationX;
+  heartGroup.rotation.y = currentRotationY;
+
+  camera.position.z += (targetZoom - camera.position.z) * 0.08;
+
+  var children = heartGroup.children;
+  for (var i = 0; i < children.length; i++) {
+    var mesh = children[i];
+    var d = mesh.userData;
+    d.time += d.speed;
+    mesh.position.x = d.originalPos.x + Math.sin(d.time) * d.amplitudeX;
+    mesh.position.y = d.originalPos.y + Math.cos(d.time * 0.7) * d.amplitudeY;
+    mesh.position.z = d.originalPos.z + Math.sin(d.time * 0.5) * d.amplitudeZ;
+    mesh.rotation.x += d.spinX;
+    mesh.rotation.y += d.spinY;
+  }
+
+  // slow galaxy drift, independent of the hearts
+  starField.rotation.y += 0.00015;
+  starField.rotation.z += 0.00008;
+
+  keyLight.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.0012);
+  rimLight.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.0012);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener("resize", function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  sizeCenterText();
+});
+
+/* =========================================================
+   Music + mute
+   ========================================================= */
+var music = document.getElementById("bg-music");
+music.src = CONFIG.MUSIC_FILE;
+music.volume = CONFIG.MUSIC_VOLUME;
+
+var muteBtn = document.getElementById("mute-btn");
+var iconOn = document.getElementById("icon-on");
+var iconOff = document.getElementById("icon-off");
+var isMuted = false;
+
+muteBtn.addEventListener("click", function (e) {
+  e.stopPropagation();
+  isMuted = !isMuted;
+  music.muted = isMuted;
+  iconOn.classList.toggle("hidden", isMuted);
+  iconOff.classList.toggle("hidden", !isMuted);
+  muteBtn.setAttribute("aria-label", isMuted ? "Nyalakan musik" : "Matikan musik");
+});
+
+/* =========================================================
+   Loading screen + gate
+   ========================================================= */
+var gate = document.getElementById("gate");
+var barFill = document.getElementById("bar-fill");
+var gateStatus = document.getElementById("gate-status");
+var gatePrompt = document.getElementById("gate-prompt");
+var ui = document.getElementById("ui");
+
+var progress = 0;
+var sceneReady = false;
+var gateOpen = false;
+
+requestAnimationFrame(function () {
+  requestAnimationFrame(function () { sceneReady = true; });
+});
+
+var loadTick = setInterval(function () {
+  var ceiling = sceneReady ? 100 : 92;
+  progress = Math.min(ceiling, progress + 2 + Math.random() * 5);
+  barFill.style.width = progress + "%";
+  gateStatus.textContent = "Memuat " + Math.floor(progress) + "%";
+
+  if (progress >= 100) {
+    clearInterval(loadTick);
+    gateStatus.classList.add("hidden");
+    gatePrompt.classList.remove("hidden");
+    gate.addEventListener("click", openGate);
+    gate.addEventListener("touchend", openGate);
+  }
+}, 130);
+
+function openGate(e) {
+  if (gateOpen) { return; }
+  gateOpen = true;
+  if (e) { e.preventDefault(); }
+
+  // must start inside the tap handler for mobile autoplay
+  var p = music.play();
+  if (p && p.catch) { p.catch(function () {}); }
+
+  gate.classList.add("fade-out");
+  ui.classList.add("visible");
+  markActive();
+
+  setTimeout(function () {
+    gate.classList.add("hidden");
+  }, 950);
+}
+</script>
+</body>
+</html>

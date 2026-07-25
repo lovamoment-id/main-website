@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lepas Lampion</title>
+
+<!-- =========================================================================
+     LOVAMOMENT — LEPAS LAMPION (SKY LANTERN RELEASE)
+     Single-file HTML / CSS / vanilla JS. No frameworks, no build tools.
+
+     HOW TO CUSTOMIZE (per order):
+       1. Edit the CONFIG values below (names, occasion).
+       2. Edit CONFIG.wishes — one string per lantern (add / remove freely).
+       3. Photos: one per lantern, matched in order:
+            image1.jpg -> lantern 1, image2.jpg -> lantern 2, ...
+          A lantern with no matching photo simply shows its wish text only.
+       4. music.mp3 -> ambient loop, starts on the first tap.
+          Any missing file is handled gracefully (no broken icons / no errors).
+
+     NOTE: Plain string concatenation is used (not template literals) so the
+     file stays safe to hand-edit. Do not swap the ' + ' joins for backticks.
+========================================================================== -->
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --sky-1:#0a0e27; --sky-2:#131a3a; --sky-3:#1c2450;
+    --amber-1:#ffd27a; --amber-2:#ff9a3c; --amber-3:#ff7a2f;
+    --glow:rgba(255,170,80,0.75); --cream:#f5ead6;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--cream);
+    background: linear-gradient(180deg, #05060f 0%, var(--sky-1) 45%, var(--sky-2) 100%);
+    overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+
+  .page {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- STARFIELD ---------- */
+  #starfield { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+  .moon {
+    position: fixed; top: 12%; right: 14%; width: 70px; height: 70px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff8e6, #e8dcbf 60%, #cbb98f);
+    box-shadow: 0 0 50px 12px rgba(255,245,210,0.35); z-index: 0;
+  }
+
+  /* ---------- SHOOTING STARS ---------- */
+  #shooting { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .shoot { position: fixed; z-index: 1; pointer-events: none; }
+  .shoot .streak {
+    display: block; width: 110px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, #ffffff, rgba(255,255,255,0));
+    box-shadow: 0 0 6px rgba(255,255,255,0.7);
+    opacity: 0; animation: shoot linear forwards;
+  }
+  @keyframes shoot {
+    0%   { transform: translateX(40px); opacity: 0; }
+    12%  { opacity: 1; }
+    100% { transform: translateX(-320px); opacity: 0; }
+  }
+
+  /* ---------- BACKGROUND FLOATING LANTERNS ---------- */
+  #bg-lanterns { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .lantern.bg {
+    position: fixed; bottom: -80px; z-index: 1;
+    animation: bgFloat linear infinite;
+  }
+  @keyframes bgFloat {
+    0%   { transform: translate(0, 0) scale(var(--s,0.5)); opacity: 0; }
+    12%  { opacity: var(--op,0.5); }
+    88%  { opacity: var(--op,0.5); }
+    100% { transform: translate(var(--dx,0px), -125vh) scale(var(--s,0.5)); opacity: 0; }
+  }
+
+  /* =========================================================
+     PAGE 1 — SKY / RELEASE
+  ========================================================== */
+  #page-sky { z-index: 2; justify-content: flex-end; padding-bottom: 8vh; }
+
+  .intro {
+    position: absolute; top: 9vh; left: 0; right: 0; z-index: 2; padding: 0 24px;
+    transition: opacity 0.6s ease;
+  }
+  .intro h1 { font-size: 26px; font-weight: normal; letter-spacing: 1px; margin-bottom: 8px; }
+  .intro p { font-size: 14px; color: rgba(245,234,214,0.7); line-height: 1.6; }
+
+  /* release zone: photo above the wish text */
+  .wish-zone {
+    position: absolute; top: 24vh; left: 50%; transform: translateX(-50%);
+    width: 88%; max-width: 380px; z-index: 3; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .wish-photo {
+    width: 132px; height: 132px; object-fit: cover; border-radius: 10px;
+    border: 3px solid rgba(255,210,122,0.6);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.55), 0 0 26px rgba(255,170,80,0.35);
+    margin-bottom: 16px; display: none;
+    opacity: 0; transform: translateY(12px); transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .wish-photo.show { opacity: 1; transform: translateY(0); }
+  .wish-caption {
+    font-size: 19px; line-height: 1.55; color: var(--amber-1);
+    text-shadow: 0 0 16px rgba(255,170,80,0.5);
+    opacity: 0; transform: translateY(10px); transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .wish-caption.show { opacity: 1; transform: translateY(0); }
+
+  .base-lantern {
+    position: relative; z-index: 4; background: transparent; border: none; cursor: pointer;
+    animation: hover 3s ease-in-out infinite;
+  }
+  @keyframes hover { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+  .tap-hint { margin-top: 18px; font-size: 14px; letter-spacing: 1px; color: var(--amber-1); animation: pulse 2.2s ease-in-out infinite; z-index: 4; }
+  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .counter { margin-top: 8px; font-size: 12px; letter-spacing: 2px; color: rgba(245,234,214,0.55); z-index: 4; }
+
+  /* ---------- LANTERN SHAPE ---------- */
+  .lantern { position: relative; width: 54px; height: 68px; margin: 0 auto; }
+  .lantern .body {
+    position: absolute; inset: 0; border-radius: 26px 26px 18px 18px;
+    background: linear-gradient(180deg, var(--amber-1), var(--amber-2) 55%, var(--amber-3));
+    box-shadow: inset 0 -6px 10px rgba(180,60,0,0.4), 0 0 26px 4px var(--glow);
+  }
+  .lantern .cap { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 30px; height: 10px; border-radius: 5px 5px 0 0; background: #7a4a1e; }
+  .lantern .base { position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 34px; height: 8px; border-radius: 0 0 6px 6px; background: #6b3f18; }
+  .lantern .flame {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 14px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 70%, #fff2c2, #ffb347 70%, transparent);
+    filter: blur(0.5px); animation: flicker 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes flicker { from { opacity: 0.8; transform: translateX(-50%) scaleY(0.9); } to { opacity: 1; transform: translateX(-50%) scaleY(1.1); } }
+
+  .lantern.launched { position: fixed; bottom: 12vh; z-index: 3; animation: ascend linear forwards; }
+  @keyframes ascend {
+    0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translate(var(--driftX,0px), -118vh) rotate(var(--rot,6deg)); opacity: 0; }
+  }
+
+  /* =========================================================
+     PAGE 2 — FINALE
+  ========================================================== */
+  #page-finale { z-index: 1; }
+  .finale-inner { position: relative; z-index: 2; width: 100%; max-width: 440px; }
+  .finale-tag { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--amber-1); margin-bottom: 10px; }
+  .finale-name { font-size: 26px; margin-bottom: 20px; }
+  #letter-source p { font-size: 18px; line-height: 1.75; margin-bottom: 12px; color: var(--cream); min-height: 1px; }
+  .finale-signoff { margin-top: 16px; font-size: 17px; color: var(--amber-1); opacity: 0; transition: opacity 0.6s ease; }
+  .finale-signoff.show { opacity: 1; }
+
+  /* ---------- CONTROLS ---------- */
+  .audio-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 40;
+    min-width: 44px; min-height: 44px; border-radius: 50%;
+    border: 1px solid rgba(255,210,122,0.5); background: rgba(10,14,39,0.55);
+    color: var(--amber-1); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  }
+  .audio-toggle:focus-visible, .base-lantern:focus-visible { outline: 2px solid var(--amber-1); outline-offset: 3px; }
+
+  /* ---------- DESKTOP ---------- */
+  @media (min-width: 768px) {
+    .intro h1 { font-size: 32px; }
+    .lantern { width: 66px; height: 84px; }
+    .finale-name { font-size: 32px; }
+    #letter-source p { font-size: 20px; }
+    .wish-photo { width: 160px; height: 160px; }
+  }
+
+  /* ---------- REDUCED MOTION ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    .star, .base-lantern, .flame, .tap-hint, .lantern.bg { animation: none !important; }
+    .lantern.launched { animation-duration: 2s !important; }
+    .shoot { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="starfield"></div>
+  <div class="moon"></div>
+  <div id="shooting"></div>
+  <div id="bg-lanterns"></div>
+
+  <!-- ============ PAGE 1 : SKY / RELEASE ============ -->
+  <div class="page" id="page-sky">
+    <div class="intro" id="intro">
+      <h1 id="introTitle">Malam ini, untukmu</h1>
+      <p>Lepaskan setiap lampion. Bawa harapannya ke langit.</p>
+    </div>
+
+    <div class="wish-zone">
+      <img class="wish-photo" id="wishPhoto" alt="Kenangan">
+      <div class="wish-caption" id="wishCaption"></div>
+    </div>
+
+    <button class="base-lantern" id="baseLantern" aria-label="Lepas lampion">
+      <div class="lantern">
+        <div class="cap"></div><div class="body"></div><div class="flame"></div><div class="base"></div>
+      </div>
+    </button>
+    <div class="tap-hint" id="tapHint">Ketuk untuk melepas</div>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <!-- ============ PAGE 2 : FINALE ============ -->
+  <div class="page hidden" id="page-finale">
+    <div class="finale-inner">
+      <div class="finale-tag" id="finaleTag">Untukmu</div>
+      <div class="finale-name" id="finaleName">Nama</div>
+      <!-- FINAL DEDICATION — typed out. Edit each <p> line. -->
+      <div id="letter-source">
+        <p>Langit malam ini penuh dengan harapan untuk kamu, Zia.</p>
+        <p>Setiap lampion membawa satu doa yang sama: semoga kamu selalu bahagia.</p>
+        <p>Dan ke mana pun kamu pergi, tahulah bahwa kamu selalu dicintai.</p>
+      </div>
+      <div class="finale-signoff" id="finaleSignoff">dari seseorang</div>
+    </div>
+  </div>
+
+  <button class="audio-toggle hidden" id="audioToggle" aria-label="Matikan / nyalakan musik">&#9835;</button>
+  <audio id="player" loop preload="auto"></audio>
+
+<script>
+  /* ========================= CONFIG ========================= */
+  var CONFIG = {
+    recipientName: "Zia",
+    senderName:    "Leo",
+    occasion:      "Untukmu",
+    wishes: [
+      "Semoga hari-harimu selalu diterangi cahaya.",
+      "Semoga setiap langkahmu dituntun oleh doa.",
+      "Semoga kamu tahu betapa berartinya kamu.",
+      "Semoga kita selalu menemukan jalan pulang."
+    ],
+    /* photos are matched to lanterns in order: image1.* -> wish 1, etc. */
+    imagePrefix: "image",
+    /* extensions tried in this order for each photo, first match wins */
+    imageExtensions: ["jpg", "JPG", "jpeg", "JPEG", "webp", "WEBP", "heic", "HEIC"],
+    musicFile:   "music.mp3"
+  };
+  /* ========================================================= */
+
+  var index = 0, releasing = false;
+  var pageSky  = document.getElementById("page-sky");
+  var pageFin  = document.getElementById("page-finale");
+  var baseBtn  = document.getElementById("baseLantern");
+  var wishCap  = document.getElementById("wishCaption");
+  var wishPhoto= document.getElementById("wishPhoto");
+  var tapHint  = document.getElementById("tapHint");
+  var counter  = document.getElementById("counter");
+  var intro    = document.getElementById("intro");
+  var player   = document.getElementById("player");
+  var audioBtn = document.getElementById("audioToggle");
+  var finaleSignoff = document.getElementById("finaleSignoff");
+
+  document.getElementById("finaleTag").textContent = CONFIG.occasion;
+  document.getElementById("finaleName").textContent = CONFIG.recipientName;
+  finaleSignoff.textContent = "dari " + CONFIG.senderName;
+  updateCounter();
+  function updateCounter() {
+    var left = CONFIG.wishes.length - index;
+    counter.textContent = left > 0 ? (left + " lampion tersisa") : "";
+  }
+
+  /* ---- starfield ---- */
+  (function buildStars() {
+    var host = document.getElementById("starfield"), i, count = 70;
+    for (i = 0; i < count; i++) {
+      var s = document.createElement("div");
+      s.className = "star";
+      var size = (Math.random() * 2 + 1).toFixed(1);
+      s.style.width = size + "px"; s.style.height = size + "px";
+      s.style.left = (Math.random() * 100).toFixed(2) + "%";
+      s.style.top = (Math.random() * 82).toFixed(2) + "%";
+      s.style.animationDuration = (2 + Math.random() * 3).toFixed(1) + "s";
+      s.style.animationDelay = (Math.random() * 3).toFixed(1) + "s";
+      host.appendChild(s);
+    }
+  })();
+
+  /* ---- background floating lanterns (slow loop, varied sizes) ---- */
+  (function buildBgLanterns() {
+    var host = document.getElementById("bg-lanterns"), i, count = 7;
+    for (i = 0; i < count; i++) {
+      var el = document.createElement("div");
+      el.className = "lantern bg";
+      var cap = document.createElement("div"); cap.className = "cap";
+      var body = document.createElement("div"); body.className = "body";
+      var flame = document.createElement("div"); flame.className = "flame";
+      var base = document.createElement("div"); base.className = "base";
+      el.appendChild(cap); el.appendChild(body); el.appendChild(flame); el.appendChild(base);
+      var scale = (0.4 + Math.random() * 0.35).toFixed(2); /* always smaller than the main lantern */
+      el.style.left = (Math.random() * 92).toFixed(1) + "%";
+      el.style.setProperty("--s", scale);
+      el.style.setProperty("--dx", (Math.floor(Math.random() * 120) - 60) + "px");
+      el.style.setProperty("--op", (0.35 + Math.random() * 0.35).toFixed(2));
+      el.style.animationDuration = (20 + Math.random() * 14).toFixed(1) + "s";
+      el.style.animationDelay = "-" + (Math.random() * 22).toFixed(1) + "s"; /* stagger, some mid-flight */
+      host.appendChild(el);
+    }
+  })();
+
+  /* ---- frequent shooting stars ---- */
+  (function shootingStars() {
+    var host = document.getElementById("shooting");
+    function spawn() {
+      var el = document.createElement("div");
+      el.className = "shoot";
+      el.style.top = (Math.random() * 45).toFixed(1) + "vh";
+      el.style.left = (50 + Math.random() * 48).toFixed(1) + "vw";
+      /* streaks travel down-left; rotate the wrapper so the tail trails up-right */
+      el.style.transform = "rotate(" + (-(20 + Math.random() * 14)).toFixed(1) + "deg)";
+      var streak = document.createElement("div");
+      streak.className = "streak";
+      var dur = (0.7 + Math.random() * 0.6).toFixed(2);
+      streak.style.animationDuration = dur + "s";
+      el.appendChild(streak);
+      host.appendChild(el);
+      setTimeout(function () { el.remove(); }, Math.ceil(parseFloat(dur) * 1000) + 150);
+    }
+    function loop() { spawn(); setTimeout(loop, 1200 + Math.random() * 1200); }
+    setTimeout(loop, 600);
+  })();
+
+  /* ---- preload per-lantern photos ---- */
+  var photoOK = {}; /* photoOK[n] = src, or null once confirmed missing */
+
+  /* try each extension in CONFIG.imageExtensions for a base name, in order;
+     stop at the first one that loads, mark missing if none of them exist */
+  function tryImageExtensions(baseName, extIndex, onFound, onNotFound) {
+    if (extIndex >= CONFIG.imageExtensions.length) { onNotFound(); return; }
+    var src = baseName + "." + CONFIG.imageExtensions[extIndex];
+    var test = new Image();
+    test.addEventListener("load", function () { onFound(src); });
+    test.addEventListener("error", function () {
+      tryImageExtensions(baseName, extIndex + 1, onFound, onNotFound);
+    });
+    test.src = src;
+  }
+
+  (function preloadPhotos() {
+    var i;
+    for (i = 1; i <= CONFIG.wishes.length; i++) {
+      (function (n) {
+        var baseName = CONFIG.imagePrefix + n;
+        tryImageExtensions(baseName, 0, function (src) {
+          photoOK[n] = src;
+        }, function () {
+          photoOK[n] = null;
+        });
+      })(i);
+    }
+  })();
+
+  /* ---- audio ---- */
+  player.src = CONFIG.musicFile;
+  var audioReady = true;
+  player.addEventListener("error", function () { audioReady = false; audioBtn.style.display = "none"; });
+  function updateAudioIcon() { audioBtn.innerHTML = player.paused ? "&#9834;" : "&#9835;"; }
+
+  /* ---- build a drifting launched lantern ---- */
+  function makeLaunchedLantern() {
+    var el = document.createElement("div");
+    el.className = "lantern launched";
+    var cap = document.createElement("div"); cap.className = "cap";
+    var body = document.createElement("div"); body.className = "body";
+    var flame = document.createElement("div"); flame.className = "flame";
+    var base = document.createElement("div"); base.className = "base";
+    el.appendChild(cap); el.appendChild(body); el.appendChild(flame); el.appendChild(base);
+    var rect = baseBtn.getBoundingClientRect();
+    el.style.left = (rect.left + rect.width / 2 - 27) + "px";
+    var dur = (9 + Math.random() * 4).toFixed(1);
+    el.style.setProperty("--driftX", (Math.floor(Math.random() * 120) - 60) + "px");
+    el.style.setProperty("--rot", (Math.floor(Math.random() * 16) - 8) + "deg");
+    el.style.animationDuration = dur + "s";
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, Math.ceil(parseFloat(dur) * 1000) + 200);
+  }
+
+  /* ---- release the next lantern ---- */
+  function releaseLantern() {
+    if (releasing || index >= CONFIG.wishes.length) return;
+    releasing = true;
+
+    if (audioReady && player.paused && index === 0) {
+      player.volume = 0.5;
+      var p = player.play(); if (p && p.catch) { p.catch(function () {}); }
+      audioBtn.classList.remove("hidden"); updateAudioIcon();
+    }
+    if (index === 0) { intro.style.opacity = "0"; }
+
+    /* per-lantern photo (image(index+1).jpg), if it exists */
+    var photoNum = index + 1;
+    if (photoOK[photoNum]) {
+      wishPhoto.src = photoOK[photoNum];
+      wishPhoto.style.display = "block";
+      requestAnimationFrame(function () { wishPhoto.classList.add("show"); });
+    } else {
+      wishPhoto.classList.remove("show");
+      wishPhoto.style.display = "none";
+    }
+
+    /* show the wish */
+    wishCap.innerHTML = CONFIG.wishes[index];
+    wishCap.classList.add("show");
+
+    baseBtn.style.visibility = "hidden";
+    tapHint.style.visibility = "hidden";
+    makeLaunchedLantern();
+
+    index++;
+    updateCounter();
+
+    setTimeout(function () {
+      wishCap.classList.remove("show");
+      wishPhoto.classList.remove("show");
+      if (index >= CONFIG.wishes.length) {
+        setTimeout(goToFinale, 900);
+      } else {
+        setTimeout(function () {
+          wishPhoto.style.display = "none";
+          baseBtn.style.visibility = "visible";
+          tapHint.style.visibility = "visible";
+          releasing = false;
+        }, 500);
+      }
+    }, 2700);
+  }
+  baseBtn.addEventListener("click", releaseLantern);
+
+  /* ---- finale + typewriter ---- */
+  function goToFinale() {
+    pageSky.classList.add("hidden");
+    pageFin.classList.remove("hidden");
+    typeDedication();
+  }
+  function typeDedication() {
+    var paras = document.getElementById("letter-source").getElementsByTagName("p");
+    var lines = [], k;
+    for (k = 0; k < paras.length; k++) { lines.push(paras[k].textContent); paras[k].textContent = ""; }
+    var li = 0;
+    function nextLine() {
+      if (li >= paras.length) { finaleSignoff.classList.add("show"); return; }
+      typeInto(paras[li], lines[li], function () { li++; setTimeout(nextLine, 450); });
+    }
+    nextLine();
+    function typeInto(el, text, done) {
+      var i = 0;
+      var t = setInterval(function () {
+        el.textContent = text.slice(0, i); i++;
+        if (i > text.length) { clearInterval(t); done(); }
+      }, 38);
+    }
+  }
+
+  /* ---- audio toggle ---- */
+  audioBtn.addEventListener("click", function () {
+    if (!audioReady) return;
+    if (player.paused) { var p = player.play(); if (p && p.catch) { p.catch(function () {}); } }
+    else { player.pause(); }
+    updateAudioIcon();
+  });
+  player.addEventListener("play", updateAudioIcon);
+  player.addEventListener("pause", updateAudioIcon);
+</script>
+</body>
+</html>

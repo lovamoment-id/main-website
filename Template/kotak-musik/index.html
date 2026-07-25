@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kotak Musik</title>
+
+<!-- =========================================================================
+     LOVAMOMENT — KOTAK MUSIK (MUSIC BOX)
+     Single-file HTML / CSS / vanilla JS. No frameworks, no build tools.
+
+     HOW TO CUSTOMIZE (per order):
+       1. Edit the CONFIG values below (names, occasion).
+       2. Edit the note text inside <div id="letter-source"> ... </div>
+          (each line is a <p> tag, typed out on screen; keep the <p> tags).
+       3. Drop assets next to this file:
+            image1.*, image2.*, image3.*  -> up to 3 photos (all optional)
+            music.mp3                     -> song played when the box opens
+          Accepted photo extensions, tried in order per slot:
+            jpg, JPG, jpeg, JPEG, webp, WEBP, heic, HEIC
+          Any missing file is hidden gracefully (no broken icons / no errors).
+
+     NOTE: Plain string concatenation is used (not template literals) so the
+     file stays safe to hand-edit. Do not swap the ' + ' joins for backticks.
+========================================================================== -->
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white-1: #fffdfe;
+    --white-2: #fff5f9;
+    --blush-1: #ffe8f0;
+    --blush-2: #ffd6e4;
+    --pink-1:  #f8b9cd;
+    --pink-2:  #ea8fac;
+    --pink-3:  #cf6d8c;
+    --rose-1:  #f4d8ce;
+    --rose-2:  #e0ab97;
+    --rose-3:  #c08a76;
+    --ink:     #6b4453;
+    --ink-soft:#9a7183;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    background:
+      radial-gradient(120% 95% at 50% 8%, var(--white-1) 0%, var(--white-2) 34%, var(--blush-1) 68%, var(--blush-2) 100%);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* ---------- PAGES (two .page divs, .hidden toggled) ---------- */
+  .page {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- FX LAYER (notes + sparkles flying out of the box) ---------- */
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+  .fly-note {
+    position: absolute;
+    color: var(--pink-2);
+    text-shadow: 0 0 10px rgba(234, 143, 172, 0.55);
+    will-change: transform, opacity;
+  }
+  .spark {
+    position: absolute;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--pink-1);
+    box-shadow: 0 0 9px var(--pink-1);
+    will-change: transform, opacity;
+  }
+
+  /* ambient notes on the open page */
+  #ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .amb-note {
+    position: absolute; bottom: -30px;
+    color: rgba(234, 143, 172, 0.38);
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) rotate(0); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translateY(-110vh) rotate(35deg); opacity: 0; }
+  }
+
+  /* =========================================================
+     PAGE 1 — CLOSED MUSIC BOX (ornate white + pink)
+  ========================================================== */
+  #page-box { z-index: 2; }
+
+  .box-tap {
+    position: relative; z-index: 2;
+    background: transparent; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    animation: idleWobble 4.5s ease-in-out infinite;
+  }
+  @keyframes idleWobble { 0%,100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+
+  /* soft glow pooling under the box */
+  .box-glow {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    width: 230px; height: 40px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(248,185,205,0.55), transparent 70%);
+    filter: blur(6px); z-index: 0;
+  }
+
+  .music-box { position: relative; width: 226px; height: 196px; z-index: 1; }
+
+  /* --- pearl feet --- */
+  .foot {
+    position: absolute; bottom: 0; width: 18px; height: 13px; border-radius: 50%;
+    background: linear-gradient(180deg, var(--rose-1), var(--rose-3));
+    box-shadow: 0 2px 4px rgba(140, 90, 105, 0.3);
+    z-index: 1;
+  }
+  .foot.left  { left: 26px; }
+  .foot.right { right: 26px; }
+
+  /* --- body --- */
+  .box-body {
+    position: absolute; bottom: 8px; left: 0;
+    width: 226px; height: 112px;
+    border-radius: 10px 10px 14px 14px;
+    background:
+      linear-gradient(180deg, var(--white-1) 0%, var(--white-2) 42%, var(--blush-1) 100%);
+    border: 3px solid var(--rose-2);
+    box-shadow:
+      inset 0 4px 10px rgba(255,255,255,0.95),
+      inset 0 -14px 22px rgba(224, 171, 151, 0.28),
+      0 20px 38px rgba(180, 120, 140, 0.32);
+    z-index: 2;
+  }
+
+  /* beaded rose-gold band across the body */
+  .beading {
+    position: absolute; left: 5px; right: 5px; bottom: 34px; height: 10px; z-index: 4;
+    background-image: radial-gradient(circle at 7px 5px, var(--rose-2) 3.2px, transparent 3.6px);
+    background-size: 14px 10px; background-repeat: repeat-x;
+    opacity: 0.95;
+  }
+
+  /* double-framed inlay panel with a pink field */
+  .panel {
+    position: absolute; left: 30px; right: 30px; top: 14px; bottom: 30px; z-index: 3;
+    border: 2px solid var(--rose-2); border-radius: 7px;
+    background: linear-gradient(180deg, rgba(255,214,228,0.55), rgba(248,185,205,0.35));
+  }
+  .panel::after {
+    content: ""; position: absolute; inset: 4px;
+    border: 1px solid rgba(224, 171, 151, 0.65); border-radius: 4px;
+  }
+  /* tiny monogram diamond at the panel centre */
+  .panel-gem {
+    position: absolute; top: 50%; left: 50%;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, var(--white-1), var(--pink-1));
+    border: 1px solid var(--rose-2);
+    z-index: 4;
+  }
+
+  /* filigree corner flourishes on the body */
+  .corner {
+    position: absolute; width: 16px; height: 16px; z-index: 4;
+    border: 2px solid var(--rose-2); opacity: 0.9;
+  }
+  .corner.tl { top: 8px;  left: 10px;  border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
+  .corner.tr { top: 8px;  right: 10px; border-left: none;  border-bottom: none; border-radius: 0 8px 0 0; }
+  .corner.bl { bottom: 8px; left: 10px;  border-right: none; border-top: none;  border-radius: 0 0 0 8px; }
+  .corner.br { bottom: 8px; right: 10px; border-left: none;  border-top: none;  border-radius: 0 0 8px 0; }
+
+  /* --- wind-up key (spoked) --- */
+  .wind-key {
+    position: absolute; right: -20px; top: 84px; z-index: 2;
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 4px solid var(--rose-2);
+    animation: windTurn 7s linear infinite;
+  }
+  .wind-key::before {
+    content: ""; position: absolute; left: 50%; top: -3px;
+    width: 3px; height: 26px; margin-left: -1.5px;
+    background: var(--rose-2); border-radius: 2px;
+  }
+  .wind-key::after {
+    content: ""; position: absolute; top: 50%; left: -3px;
+    width: 26px; height: 3px; margin-top: -1.5px;
+    background: var(--rose-2); border-radius: 2px;
+  }
+  .key-stem {
+    position: absolute; right: 8px; top: 96px; z-index: 1;
+    width: 16px; height: 4px; border-radius: 2px;
+    background: var(--rose-2);
+  }
+  @keyframes windTurn { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  /* --- domed lid, hinged at the back --- */
+  .box-lid {
+    position: absolute; top: 4px; left: 3px;
+    width: 220px; height: 62px;
+    border-radius: 100px 100px 6px 6px;
+    background:
+      linear-gradient(180deg, var(--white-1) 0%, var(--white-2) 45%, var(--blush-1) 100%);
+    border: 3px solid var(--rose-2);
+    box-shadow: inset 0 5px 10px rgba(255,255,255,0.95), inset 0 -6px 14px rgba(224,171,151,0.25);
+    transform-origin: 50% 100%;
+    transition: transform 0.85s cubic-bezier(0.34, 1.25, 0.4, 1);
+    z-index: 5;
+  }
+  /* sheen sweeping across the dome */
+  .lid-sheen {
+    position: absolute; top: 8px; left: 24px;
+    width: 90px; height: 18px; border-radius: 50%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0));
+    filter: blur(2px);
+  }
+  /* scalloped beading along the lid rim */
+  .lid-beading {
+    position: absolute; left: 6px; right: 6px; bottom: 3px; height: 8px;
+    background-image: radial-gradient(circle at 6px 4px, var(--rose-2) 2.6px, transparent 3px);
+    background-size: 12px 8px; background-repeat: repeat-x;
+  }
+  /* pearl finial on top of the dome */
+  .finial {
+    position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--white-1), var(--pink-1) 65%, var(--pink-2));
+    border: 2px solid var(--rose-2);
+    z-index: 6;
+  }
+  /* heart medallion centred on the lid */
+  .lid-heart {
+    position: absolute; top: 24px; left: 50%;
+    transform: translateX(-50%) rotate(-45deg);
+    width: 15px; height: 15px; background: var(--pink-2);
+  }
+  .lid-heart::before, .lid-heart::after {
+    content: ""; position: absolute; width: 15px; height: 15px;
+    border-radius: 50%; background: var(--pink-2);
+  }
+  .lid-heart::before { top: -7.5px; left: 0; }
+  .lid-heart::after  { top: 0; left: 7.5px; }
+
+  .music-box.lifting .box-lid { transform: rotate(-104deg); }
+
+  .tap-hint {
+    margin-top: 42px; font-size: 15px; letter-spacing: 1px;
+    color: var(--pink-3); animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+  /* =========================================================
+     PAGE 2 — OPEN BOX / TYPED NOTE / PHOTOS
+  ========================================================== */
+  #page-inside { z-index: 1; overflow-y: auto; }
+
+  .stage {
+    position: relative; z-index: 2; width: 100%; max-width: 460px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .ornament-wrap { position: relative; width: 116px; height: 116px; margin-bottom: 4px; }
+  .pedestal {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 66px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle, var(--pink-1), var(--rose-2) 70%, transparent);
+    opacity: 0.85;
+  }
+  .ornament { position: absolute; bottom: 8px; left: 50%; transform-origin: bottom center; animation: spin 7s linear infinite; }
+  @keyframes spin { from { transform: translateX(-50%) rotateY(0); } to { transform: translateX(-50%) rotateY(360deg); } }
+  .charm {
+    position: relative; width: 32px; height: 32px; transform: rotate(-45deg);
+    background: linear-gradient(135deg, var(--pink-1), var(--pink-3));
+    animation: bob 2.4s ease-in-out infinite;
+    box-shadow: 0 0 18px rgba(234,143,172,0.6);
+  }
+  .charm::before, .charm::after {
+    content: ""; position: absolute; width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink-1), var(--pink-3));
+  }
+  .charm::before { top: -16px; left: 0; }
+  .charm::after  { top: 0; left: 16px; }
+  @keyframes bob { 0%,100% { margin-bottom: 0; } 50% { margin-bottom: 10px; } }
+
+  .orbit { position: absolute; inset: 0; animation: spin2 9s linear infinite; }
+  @keyframes spin2 { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .orbit i {
+    position: absolute; top: 6px; left: 50%; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--pink-2); box-shadow: 0 0 8px var(--pink-1);
+  }
+  .orbit i:nth-child(2) { top: auto; bottom: 6px; }
+  .orbit i:nth-child(3) { top: 50%; left: 6px; }
+
+  .occasion-tag { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--pink-3); margin-bottom: 4px; }
+  .recipient { font-size: 24px; color: var(--ink); margin-bottom: 14px; }
+
+  .note {
+    position: relative; width: 100%; max-width: 380px;
+    background: linear-gradient(180deg, var(--white-1), var(--white-2));
+    color: var(--ink);
+    border: 1px solid rgba(224, 171, 151, 0.55);
+    border-radius: 10px; padding: 22px 22px 24px;
+    box-shadow: 0 16px 34px rgba(180, 120, 140, 0.28);
+    opacity: 0; transform: translateY(26px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    min-height: 120px;
+  }
+  .note.show { opacity: 1; transform: translateY(0); }
+  #letter-source p {
+    font-family: 'Segoe Script', 'Brush Script MT', 'Snell Roundhand', cursive;
+    font-size: 18px; line-height: 1.7; margin-bottom: 10px; min-height: 1px;
+  }
+  #letter-source p:last-child { margin-bottom: 0; }
+  .signoff {
+    margin-top: 14px; text-align: right; color: var(--pink-3);
+    font-family: 'Segoe Script', 'Brush Script MT', 'Snell Roundhand', cursive; font-size: 20px;
+    opacity: 0; transition: opacity 0.6s ease;
+  }
+  .signoff.show { opacity: 1; }
+
+  .photo-row {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+    margin-top: 20px; padding-bottom: 8px;
+  }
+  .photo {
+    width: 96px; height: 96px; object-fit: cover;
+    border-radius: 6px; border: 4px solid var(--white-1);
+    box-shadow: 0 10px 22px rgba(180, 120, 140, 0.32);
+    background: linear-gradient(135deg, var(--blush-1), var(--pink-1));
+    opacity: 0; transform: translateY(18px) rotate(0deg);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .photo.show { opacity: 1; transform: translateY(0); }
+  .photo:nth-child(1).show { transform: translateY(0) rotate(-4deg); }
+  .photo:nth-child(3).show { transform: translateY(0) rotate(4deg); }
+
+  /* ---------- CONTROLS ---------- */
+  .ctrl {
+    position: fixed; z-index: 40;
+    min-width: 44px; min-height: 44px; border-radius: 50%;
+    border: 1px solid var(--rose-2); background: rgba(255, 255, 255, 0.75);
+    color: var(--pink-3); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(180, 120, 140, 0.22);
+  }
+  #audioToggle { top: 16px; right: 16px; }
+  #replayBtn   { bottom: 16px; right: 16px; font-size: 15px; }
+  .ctrl:focus-visible, .box-tap:focus-visible { outline: 2px solid var(--pink-2); outline-offset: 3px; }
+
+  /* ---------- DESKTOP ---------- */
+  @media (min-width: 768px) {
+    .music-box { width: 282px; height: 240px; }
+    .box-body  { width: 282px; height: 140px; }
+    .box-lid   { width: 274px; height: 76px; }
+    .box-glow  { width: 286px; }
+    .foot.left { left: 34px; } .foot.right { right: 34px; }
+    .wind-key  { top: 104px; }
+    .key-stem  { top: 116px; }
+    .recipient { font-size: 30px; }
+    #letter-source p { font-size: 20px; }
+    .photo { width: 116px; height: 116px; }
+  }
+
+  /* ---------- REDUCED MOTION ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    .box-tap, .ornament, .orbit, .charm, .amb-note, .tap-hint, .wind-key { animation: none !important; }
+    .note, .photo, .box-lid, .signoff { transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="ambient"></div>
+  <div id="fx"></div>
+
+  <!-- ============ PAGE 1 : CLOSED BOX ============ -->
+  <div class="page" id="page-box">
+    <button class="box-tap" id="boxTap" aria-label="Buka kotak musik">
+      <div class="box-glow"></div>
+      <div class="music-box" id="musicBox">
+        <div class="foot left"></div>
+        <div class="foot right"></div>
+
+        <div class="box-body"></div>
+        <div class="panel"><div class="panel-gem"></div></div>
+        <div class="beading"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <div class="key-stem"></div>
+        <div class="wind-key"></div>
+
+        <div class="box-lid">
+          <div class="finial"></div>
+          <div class="lid-sheen"></div>
+          <div class="lid-heart"></div>
+          <div class="lid-beading"></div>
+        </div>
+      </div>
+      <div class="tap-hint">Ketuk untuk membuka &#9834;</div>
+    </button>
+  </div>
+
+  <!-- ============ PAGE 2 : OPEN BOX ============ -->
+  <div class="page hidden" id="page-inside">
+    <div class="stage">
+      <div class="ornament-wrap">
+        <div class="orbit"><i></i><i></i><i></i></div>
+        <div class="ornament"><div class="charm"></div></div>
+        <div class="pedestal"></div>
+      </div>
+
+      <div class="occasion-tag" id="occasionTag">Untukmu</div>
+      <div class="recipient" id="recipientName">Nama</div>
+
+      <div class="note" id="note">
+        <!-- EDIT THE NOTE HERE (each line is typed out; keep the <p> tags) -->
+        <div id="letter-source">
+          <p>Setiap kali lagu ini diputar, aku ingin kamu ingat satu hal:</p>
+          <p>bahwa di suatu tempat, ada seseorang yang bersyukur karena kamu ada.</p>
+          <p>Simpan melodi kecil ini baik-baik, ya.</p>
+        </div>
+        <div class="signoff" id="signoff">dari seseorang</div>
+      </div>
+
+      <div class="photo-row" id="photoRow"></div>
+    </div>
+  </div>
+
+  <button class="ctrl hidden" id="audioToggle" aria-label="Matikan / nyalakan musik">&#9835;</button>
+  <button class="ctrl hidden" id="replayBtn" aria-label="Putar ulang">&#8635;</button>
+
+  <audio id="player" loop preload="auto"></audio>
+
+<script>
+  /* ========================= CONFIG ========================= */
+  var CONFIG = {
+    recipientName: "Zia",
+    senderName:    "Leo",
+    occasion:      "Untukmu",
+    imageBaseNames: ["image1", "image2", "image3"], /* up to 3 */
+    /* extensions tried in this order for each image above, first match wins */
+    imageExtensions: ["jpg", "JPG", "jpeg", "JPEG", "webp", "WEBP", "heic", "HEIC"],
+    musicFile:     "music.mp3"
+  };
+  /* ========================================================= */
+
+  var opened = false;
+  var pageBox   = document.getElementById("page-box");
+  var pageIn    = document.getElementById("page-inside");
+  var musicBox  = document.getElementById("musicBox");
+  var boxTap    = document.getElementById("boxTap");
+  var note      = document.getElementById("note");
+  var signoff   = document.getElementById("signoff");
+  var photoRow  = document.getElementById("photoRow");
+  var player    = document.getElementById("player");
+  var audioBtn  = document.getElementById("audioToggle");
+  var replayBtn = document.getElementById("replayBtn");
+  var fx        = document.getElementById("fx");
+
+  document.getElementById("occasionTag").textContent = CONFIG.occasion;
+  document.getElementById("recipientName").textContent = CONFIG.recipientName;
+  signoff.textContent = "dari " + CONFIG.senderName;
+
+  /* capture the original note lines once, then blank them so the finished
+     letter never flashes before the typewriter runs */
+  var noteParas = document.getElementById("letter-source").getElementsByTagName("p");
+  var noteLines = [];
+  (function () {
+    var k;
+    for (k = 0; k < noteParas.length; k++) { noteLines.push(noteParas[k].textContent); noteParas[k].textContent = ""; }
+  })();
+
+  /* ambient notes on the open page */
+  (function buildAmbient() {
+    var host = document.getElementById("ambient");
+    var glyphs = ["\u266A", "\u266B", "\u2669", "\u273F"];
+    var i;
+    for (i = 0; i < 9; i++) {
+      var n = document.createElement("span");
+      n.className = "amb-note";
+      n.textContent = glyphs[i % glyphs.length];
+      n.style.left = Math.floor(Math.random() * 94) + "%";
+      n.style.fontSize = (16 + Math.floor(Math.random() * 14)) + "px";
+      n.style.animationDuration = (9 + Math.random() * 8).toFixed(1) + "s";
+      n.style.animationDelay = (Math.random() * 8).toFixed(1) + "s";
+      host.appendChild(n);
+    }
+  })();
+
+  /* try each extension for a base name, in order; first match wins */
+  function tryImageExtensions(baseName, extIndex, onFound, onNotFound) {
+    if (extIndex >= CONFIG.imageExtensions.length) { onNotFound(); return; }
+    var src = baseName + "." + CONFIG.imageExtensions[extIndex];
+    var test = new Image();
+    test.addEventListener("load", function () { onFound(src); });
+    test.addEventListener("error", function () {
+      tryImageExtensions(baseName, extIndex + 1, onFound, onNotFound);
+    });
+    test.src = src;
+  }
+
+  /* photos: test-load each; show only the ones that exist (order preserved) */
+  (function loadPhotos() {
+    var i;
+    for (i = 0; i < CONFIG.imageBaseNames.length; i++) {
+      var img = document.createElement("img");
+      img.className = "photo";
+      img.alt = "Kenangan " + (i + 1);
+      img.style.transitionDelay = (0.15 * i) + "s";
+      photoRow.appendChild(img);
+      (function (el, baseName) {
+        tryImageExtensions(baseName, 0, function (src) {
+          el.src = src;
+          el.setAttribute("data-ok", "1");
+        }, function () {
+          el.remove();
+        });
+      })(img, CONFIG.imageBaseNames[i]);
+    }
+  })();
+
+  function revealPhotos() {
+    var imgs = photoRow.querySelectorAll('img[data-ok="1"]');
+    var i; for (i = 0; i < imgs.length; i++) { imgs[i].classList.add("show"); }
+  }
+
+  /* audio */
+  player.src = CONFIG.musicFile;
+  var audioReady = true;
+  player.addEventListener("error", function () { audioReady = false; audioBtn.style.display = "none"; });
+  function updateAudioIcon() { audioBtn.innerHTML = player.paused ? "&#9834;" : "&#9835;"; }
+
+  /* burst of sparkles + musical notes flying out of the box */
+  function burstFromBox() {
+    var rect = musicBox.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height * 0.35;
+    var glyphs = ["\u266A", "\u266B", "\u2669", "\u266C"];
+    var i;
+    for (i = 0; i < 18; i++) {
+      var s = document.createElement("div");
+      s.className = "spark";
+      s.style.left = cx + "px"; s.style.top = cy + "px";
+      fx.appendChild(s);
+      var ang = (Math.PI * 2 * i) / 18;
+      var dist = 80 + Math.random() * 70;
+      (function (el, dx, dy) {
+        requestAnimationFrame(function () {
+          el.style.transition = "transform 0.9s ease-out, opacity 0.9s ease-out";
+          el.style.transform = "translate(" + dx + "px," + dy + "px) scale(0.3)";
+          el.style.opacity = "0";
+        });
+        setTimeout(function () { el.remove(); }, 1000);
+      })(s, Math.cos(ang) * dist, Math.sin(ang) * dist);
+    }
+    for (i = 0; i < 12; i++) {
+      var nEl = document.createElement("div");
+      nEl.className = "fly-note";
+      nEl.textContent = glyphs[i % glyphs.length];
+      nEl.style.left = (cx - 10 + (Math.random() * 40 - 20)) + "px";
+      nEl.style.top = cy + "px";
+      nEl.style.fontSize = (16 + Math.random() * 16) + "px";
+      fx.appendChild(nEl);
+      (function (el, dx, dy, delay) {
+        setTimeout(function () {
+          el.style.transition = "transform 1.6s ease-out, opacity 1.6s ease-out";
+          el.style.transform = "translate(" + dx + "px," + dy + "px) rotate(" + (Math.random() * 60 - 30) + "deg)";
+          el.style.opacity = "0";
+        }, delay);
+        setTimeout(function () { el.remove(); }, 1700 + delay);
+      })(nEl, (Math.random() * 120 - 60), -(140 + Math.random() * 120), i * 60);
+    }
+  }
+
+  /* typewriter for the note */
+  function typeNote() {
+    var k; for (k = 0; k < noteParas.length; k++) { noteParas[k].textContent = ""; }
+    var li = 0;
+    function nextLine() {
+      if (li >= noteParas.length) { signoff.classList.add("show"); return; }
+      typeInto(noteParas[li], noteLines[li], function () { li++; setTimeout(nextLine, 400); });
+    }
+    nextLine();
+    function typeInto(el, text, done) {
+      var i = 0;
+      var t = setInterval(function () {
+        el.textContent = text.slice(0, i); i++;
+        if (i > text.length) { clearInterval(t); done(); }
+      }, 34);
+    }
+  }
+
+  /* open sequence */
+  function openBox() {
+    if (opened) return;
+    opened = true;
+    if (audioReady) { var p = player.play(); if (p && p.catch) { p.catch(function () {}); } }
+    musicBox.classList.add("lifting");
+    burstFromBox();
+    setTimeout(function () {
+      pageBox.classList.add("hidden");
+      pageIn.classList.remove("hidden");
+      audioBtn.classList.remove("hidden");
+      replayBtn.classList.remove("hidden");
+      updateAudioIcon();
+      requestAnimationFrame(function () {
+        note.classList.add("show");
+        setTimeout(typeNote, 500);
+        setTimeout(revealPhotos, 700);
+      });
+    }, 900);
+  }
+  boxTap.addEventListener("click", openBox);
+
+  audioBtn.addEventListener("click", function () {
+    if (!audioReady) return;
+    if (player.paused) { var p = player.play(); if (p && p.catch) { p.catch(function () {}); } }
+    else { player.pause(); }
+    updateAudioIcon();
+  });
+  player.addEventListener("play", updateAudioIcon);
+  player.addEventListener("pause", updateAudioIcon);
+
+  replayBtn.addEventListener("click", function () {
+    note.classList.remove("show");
+    signoff.classList.remove("show");
+    musicBox.classList.remove("lifting");
+    pageIn.classList.add("hidden");
+    pageBox.classList.remove("hidden");
+    audioBtn.classList.add("hidden");
+    replayBtn.classList.add("hidden");
+    var imgs = photoRow.querySelectorAll("img.photo");
+    var i; for (i = 0; i < imgs.length; i++) { imgs[i].classList.remove("show"); }
+    opened = false;
+  });
+</script>
+</body>
+</html>

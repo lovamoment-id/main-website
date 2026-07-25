@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1A1226">
+<title>Kartu Gosok Cinta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Caveat:wght@500;700&family=Karla:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   KARTU GOSOK CINTA - Lovamoment.id
+   Single file. HTML + CSS + vanilla JS. No frameworks.
+   Assets: image1.jpg ... image(n).jpg, music.mp3
+   ============================================================ */
+
+:root{
+  --ink:        #1A1226;
+  --plum:       #2E1F42;
+  --plum-soft:  #3D2B57;
+  --rose:       #E4A17E;
+  --foil:       #FBE3CF;
+  --gold:       #F0C05A;
+  --mint:       #6FD3BE;
+  --cream:      #F7F0E7;
+  --muted:      #A794BC;
+
+  --font-display: 'Alfa Slab One', serif;
+  --font-hand:    'Caveat', cursive;
+  --font-body:    'Karla', sans-serif;
+  --font-mono:    'Space Mono', monospace;
+
+  --radius: 14px;
+  --shadow-card: 0 14px 34px rgba(0,0,0,.45);
+  --ease: cubic-bezier(.22,.9,.28,1);
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body{ height:100%; }
+
+body{
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(228,161,126,.20), transparent 60%),
+    radial-gradient(90% 60% at 10% 110%, rgba(111,211,190,.12), transparent 60%),
+    linear-gradient(180deg, var(--ink), #120C1B);
+}
+
+/* subtle paper grain */
+body::after{
+  content:"";
+  position: fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:1;
+  opacity:.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.page{
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  padding: 28px 20px calc(40px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hidden{ display: none !important; }
+
+/* ---------- loader ---------- */
+#loader{
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  transition: opacity .5s ease;
+}
+#loader.out{ opacity: 0; pointer-events: none; }
+.loader-mark{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .32em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.loader-bar{
+  width: 168px; height: 3px;
+  background: rgba(255,255,255,.10);
+  border-radius: 3px; overflow: hidden;
+}
+.loader-fill{
+  width: 0%; height: 100%;
+  background: linear-gradient(90deg, var(--rose), var(--gold));
+  transition: width .35s ease;
+}
+
+/* ---------- ambient foil flakes ---------- */
+#flakes{
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.flake{
+  position: absolute;
+  top: -8vh;
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: flake-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes flake-fall{
+  0%   { transform: translate3d(0,-10vh,0) rotate(0deg);   opacity: 0; }
+  12%  { opacity: .85; }
+  85%  { opacity: .5; }
+  100% { transform: translate3d(22px,112vh,0) rotate(720deg); opacity: 0; }
+}
+
+/* ---------- effects canvas ---------- */
+#fx{
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* ---------- music button ---------- */
+#music-btn{
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top));
+  right: 14px;
+  z-index: 70;
+  width: 42px; height: 42px;
+  border: 1px solid rgba(251,227,207,.28);
+  border-radius: 50%;
+  background: rgba(26,18,38,.72);
+  backdrop-filter: blur(8px);
+  color: var(--foil);
+  display: none;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform .25s var(--ease), border-color .25s ease;
+}
+#music-btn.show{ display: flex; }
+#music-btn:active{ transform: scale(.9); }
+#music-btn svg{ width: 18px; height: 18px; }
+#music-btn .bar{
+  transform-origin: bottom;
+  animation: eq 1s ease-in-out infinite alternate;
+}
+#music-btn .bar:nth-child(2){ animation-delay: .18s; }
+#music-btn .bar:nth-child(3){ animation-delay: .36s; }
+#music-btn.muted .bar{ animation-play-state: paused; opacity: .38; }
+@keyframes eq{ from{ transform: scaleY(.35);} to{ transform: scaleY(1);} }
+
+/* ============================================================
+   PAGE 1 - COVER (ticket booth)
+   ============================================================ */
+#page-cover{ justify-content: center; text-align: center; }
+
+.booth{
+  width: 100%;
+  max-width: 380px;
+  background: linear-gradient(170deg, var(--plum), var(--plum-soft));
+  border: 1px solid rgba(251,227,207,.16);
+  border-radius: 20px;
+  padding: 30px 24px 26px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  animation: rise .9s var(--ease) both;
+}
+@keyframes rise{ from{ opacity:0; transform: translateY(26px);} to{ opacity:1; transform:none;} }
+
+/* perforated notches - the ticket cue, reused on cards */
+.booth::before, .booth::after{
+  content:"";
+  position:absolute;
+  top: 50%;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #120C1B;
+  transform: translateY(-50%);
+}
+.booth::before{ left: -11px; }
+.booth::after{ right: -11px; }
+
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+.cover-title{
+  font-family: var(--font-display);
+  font-size: clamp(28px, 9vw, 38px);
+  line-height: 1.08;
+  color: var(--foil);
+  letter-spacing: .01em;
+}
+.cover-title span{ color: var(--gold); }
+
+.cover-name{
+  font-family: var(--font-hand);
+  font-size: 30px;
+  color: var(--mint);
+  margin-top: 8px;
+}
+.cover-text{
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 14px auto 24px;
+  max-width: 30ch;
+}
+.divider{
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(251,227,207,.35) 0 5px, transparent 5px 10px);
+  margin: 18px 0;
+}
+
+.btn{
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--gold), var(--rose));
+  border: none;
+  border-radius: 999px;
+  padding: 15px 30px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(228,161,126,.3);
+  transition: transform .2s var(--ease), box-shadow .2s ease;
+}
+.btn:active{ transform: scale(.95); }
+.btn:focus-visible, .card:focus-visible, #music-btn:focus-visible, .icon-btn:focus-visible{
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+}
+.btn.ghost{
+  background: transparent;
+  color: #6B3E2E;
+  border: 1px solid rgba(107,62,46,.45);
+  box-shadow: none;
+}
+.btn.ghost:active{ background: rgba(107,62,46,.08); }
+
+.serial{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .18em;
+  margin-top: 18px;
+}
+
+/* wipe transition */
+#wipe{
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  background: linear-gradient(115deg, var(--foil), var(--rose) 45%, var(--gold));
+  transform: translate3d(-110%,0,0) skewX(-12deg);
+}
+#wipe.run{ animation: wipe 1.15s var(--ease) forwards; }
+@keyframes wipe{
+  0%   { transform: translate3d(-130%,0,0) skewX(-12deg); }
+  48%  { transform: translate3d(0,0,0) skewX(-12deg); }
+  100% { transform: translate3d(130%,0,0) skewX(-12deg); }
+}
+
+/* ============================================================
+   PAGE 2 - DECK
+   ============================================================ */
+#page-deck{ padding-top: calc(64px + env(safe-area-inset-top)); }
+
+.deck-head{
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  margin-bottom: 22px;
+}
+.deck-title{
+  font-family: var(--font-display);
+  font-size: clamp(22px, 6.5vw, 30px);
+  color: var(--foil);
+}
+.deck-sub{
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.meter{
+  width: 100%;
+  max-width: 340px;
+  margin: 18px auto 0;
+}
+.meter-track{
+  height: 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.09);
+  overflow: hidden;
+}
+.meter-fill{
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--mint), var(--gold));
+  transition: width .5s var(--ease);
+}
+.meter-label{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  color: var(--muted);
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+
+.grid{
+  width: 100%;
+  max-width: 720px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+/* ---------- card ---------- */
+.card{
+  position: relative;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, var(--plum), var(--plum-soft));
+  border: 1px solid rgba(251,227,207,.14);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  aspect-ratio: 10 / 7;
+  animation: rise .7s var(--ease) both;
+}
+.card::before, .card::after{
+  content:"";
+  position: absolute;
+  top: 50%;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #120C1B;
+  transform: translateY(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+.card::before{ left: -9px; }
+.card::after{ right: -9px; }
+
+.card-face{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+}
+.card-face img{
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.card-face .veil{
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26,18,38,0) 30%, rgba(26,18,38,.9));
+}
+.card-face .no-photo{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(150deg, var(--plum-soft), var(--plum));
+  color: rgba(251,227,207,.35);
+}
+.card-face .no-photo svg{ width: 46px; height: 46px; }
+.card-copy{ position: relative; z-index: 2; }
+.card-kicker{
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.card-title{
+  font-family: var(--font-hand);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--foil);
+  margin-top: 2px;
+}
+.card-hint{
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--mint);
+  letter-spacing: .14em;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.card canvas{
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  z-index: 3;
+  touch-action: none;
+  cursor: crosshair;
+  transition: opacity .7s ease;
+}
+.card.cleared canvas{ opacity: 0; pointer-events: none; }
+.card.cleared{ cursor: pointer; }
+.card.cleared .card-face img{ animation: photo-in 1s var(--ease) both; }
+@keyframes photo-in{ from{ transform: scale(1.12); filter: saturate(.4);} to{ transform:none; filter:none;} }
+
+.card-lock{
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(18,12,27,.86);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+.card-lock svg{ width: 20px; height: 20px; }
+
+.card-badge{
+  position: absolute;
+  top: 10px; left: 12px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  color: rgba(251,227,207,.75);
+  background: rgba(18,12,27,.5);
+  border: 1px solid rgba(251,227,207,.18);
+  border-radius: 999px;
+  padding: 4px 9px;
+  pointer-events: none;
+}
+
+.deck-foot{
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.icon-btn{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed rgba(167,148,188,.5);
+  padding: 3px 0;
+  cursor: pointer;
+}
+#final-btn{ animation: glow 2.2s ease-in-out infinite; }
+@keyframes glow{
+  0%,100%{ box-shadow: 0 8px 22px rgba(228,161,126,.3); }
+  50%    { box-shadow: 0 8px 34px rgba(240,192,90,.65); }
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+#modal{
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: rgba(10,6,16,.86);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+}
+#modal.hidden{ display: none !important; }
+.modal-box{
+  width: 100%;
+  max-width: 380px;
+  max-height: 86svh;
+  overflow-y: auto;
+  background: linear-gradient(170deg, var(--plum), var(--plum-soft));
+  border: 1px solid rgba(251,227,207,.18);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+  animation: pop .4s var(--ease) both;
+}
+@keyframes pop{ from{ opacity:0; transform: scale(.92) translateY(14px);} to{ opacity:1; transform:none;} }
+.modal-photo{
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ink);
+  margin-bottom: 14px;
+}
+.modal-photo img{ width:100%; height:100%; object-fit: cover; display:block; }
+.modal-kicker{
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.modal-title{
+  font-family: var(--font-hand);
+  font-size: 30px;
+  color: var(--foil);
+  margin: 2px 0 10px;
+}
+.modal-msg{
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(247,240,231,.88);
+}
+.modal-nav{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+}
+.nav-btn{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--foil);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(251,227,207,.2);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.nav-btn[disabled]{ opacity: .3; cursor: default; }
+
+/* ============================================================
+   PAGE 3 - LETTER
+   ============================================================ */
+#page-letter{ justify-content: center; }
+.letter{
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(170deg, #FDF7EE, #F2E7D8);
+  color: #2B2233;
+  border-radius: 6px;
+  padding: 32px 26px 28px;
+  box-shadow: 0 22px 50px rgba(0,0,0,.55);
+  animation: rise .8s var(--ease) both;
+}
+.letter-stamp{
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  border: 2px dashed rgba(43,34,51,.35);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .12em;
+  color: rgba(43,34,51,.6);
+  margin: 0 auto 18px;
+  text-align: center;
+}
+.letter-to{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: rgba(43,34,51,.55);
+}
+.letter-name{
+  font-family: var(--font-hand);
+  font-size: 34px;
+  color: #6B3E2E;
+  margin: 2px 0 16px;
+}
+#letter-body p{
+  font-size: 15px;
+  line-height: 1.85;
+  margin-bottom: 14px;
+  min-height: 1.2em;
+}
+.caret::after{
+  content: "|";
+  color: #6B3E2E;
+  animation: blink .9s steps(1) infinite;
+}
+@keyframes blink{ 50%{ opacity: 0; } }
+.letter-sign{
+  margin-top: 22px;
+  text-align: right;
+  opacity: 0;
+  transition: opacity .8s ease;
+}
+.letter-sign.in{ opacity: 1; }
+.letter-sign .lbl{
+  font-size: 13px;
+  color: rgba(43,34,51,.6);
+}
+.letter-sign .who{
+  font-family: var(--font-hand);
+  font-size: 30px;
+  color: #6B3E2E;
+}
+#letter-source{ display: none; }
+.letter-foot{
+  margin-top: 26px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ---------- desktop ---------- */
+@media (min-width: 720px){
+  .grid{ grid-template-columns: 1fr 1fr; gap: 22px; }
+  .card:hover{ transform: translateY(-4px); transition: transform .3s var(--ease); }
+  .modal-box{ max-width: 460px; }
+  .booth{ max-width: 420px; padding: 38px 32px 30px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOADER ============ -->
+<div id="loader">
+  <div class="loader-mark">Lovamoment</div>
+  <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
+  <div class="loader-mark" id="loader-pct">0%</div>
+</div>
+
+<div id="flakes"></div>
+<canvas id="fx"></canvas>
+<div id="wipe"></div>
+
+<button id="music-btn" type="button" aria-label="Nyalakan atau matikan musik">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect class="bar" x="4"  y="6"  width="3.4" height="12" rx="1.6" fill="currentColor"/>
+    <rect class="bar" x="10.3" y="6" width="3.4" height="12" rx="1.6" fill="currentColor"/>
+    <rect class="bar" x="16.6" y="6" width="3.4" height="12" rx="1.6" fill="currentColor"/>
+  </svg>
+</button>
+
+<!-- ============ PAGE 1 : COVER ============ -->
+<section class="page" id="page-cover">
+  <div class="booth">
+    <div class="eyebrow" id="cover-eyebrow">Kios Keberuntungan</div>
+
+    <h1 class="cover-title" id="cover-title">Kartu Gosok <span>Cinta</span></h1>
+    <div class="cover-name" id="cover-name">untuk Zia</div>
+
+    <div class="divider"></div>
+
+    <p class="cover-text" id="cover-text">
+      Ada beberapa kartu di dalam sini. Gosok pelan-pelan pakai jarimu, dan lihat apa yang aku sembunyikan di baliknya.
+    </p>
+
+    <button class="btn" id="open-btn" type="button">Ambil Kartunya</button>
+    <div class="serial" id="cover-serial">LV-0000</div>
+  </div>
+</section>
+
+<!-- ============ PAGE 2 : DECK ============ -->
+<section class="page hidden" id="page-deck">
+  <div class="deck-head">
+    <h2 class="deck-title" id="deck-title">Gosok satu per satu</h2>
+    <p class="deck-sub" id="deck-sub">Setiap kartu menyimpan satu kenangan. Tidak usah buru-buru.</p>
+    <div class="meter">
+      <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
+      <div class="meter-label" id="meter-label">0 dari 0 kartu terbuka</div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="deck-foot">
+    <button class="btn hidden" id="final-btn" type="button">Buka Surat Terakhir</button>
+    <button class="icon-btn hidden" id="revealall-btn" type="button">Buka semua kartu</button>
+  </div>
+</section>
+
+<!-- ============ MODAL ============ -->
+<div id="modal" class="hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-photo" id="modal-photo-wrap"><img id="modal-photo" src="" alt=""></div>
+    <div class="modal-kicker" id="modal-kicker"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <p class="modal-msg" id="modal-msg"></p>
+    <div class="modal-nav">
+      <button class="nav-btn" id="modal-prev" type="button">Sebelumnya</button>
+      <button class="nav-btn" id="modal-close" type="button">Tutup</button>
+      <button class="nav-btn" id="modal-next" type="button">Berikutnya</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE 3 : LETTER ============ -->
+<section class="page hidden" id="page-letter">
+  <div class="letter">
+    <div class="letter-stamp" id="letter-stamp">LOVA<br>MOMENT</div>
+    <div class="letter-to">Kartu terakhir untuk</div>
+    <div class="letter-name" id="letter-name">Zia</div>
+
+    <div id="letter-body"></div>
+
+    <div class="letter-sign" id="letter-sign">
+      <div class="lbl" id="sign-label">Dengan cinta,</div>
+      <div class="who" id="sign-name">Aku</div>
+    </div>
+
+    <div class="letter-foot">
+      <button class="btn ghost" id="back-btn" type="button">Lihat kartu lagi</button>
+    </div>
+  </div>
+
+  <!-- Isi surat: edit paragraf di bawah ini -->
+  <div id="letter-source">
+    <p>Zia, semua kartu tadi cuma cara aku bilang satu hal yang sama berulang-ulang: aku bersyukur kamu ada.</p>
+    <p>Kalau dipikir-pikir, hidup kita ini isinya hal-hal kecil. Kopi yang kamu buatin pagi-pagi, ketawa kamu yang kekencangan pas nonton film jelek, cara kamu bilang "hati-hati di jalan" tiap aku pergi. Semua itu yang aku gosok satu per satu tadi.</p>
+    <p>And here's the thing, aku nggak pernah merasa harus jadi orang lain di depan kamu. That's rare. That's you.</p>
+    <p>Terima kasih sudah main bareng aku sampai sejauh ini. Masih banyak kartu yang belum kita gosok, dan aku mau buka semuanya sama kamu.</p>
+  </div>
+</section>
+
+<audio id="audio" loop preload="auto"></audio>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONFIG - edit bagian ini untuk tiap order
+     ============================================================ */
+  var CONFIG = {
+    recipientName:   "Zia",
+    senderName:      "Leo",
+
+    coverEyebrow:    "Lovamoment.id",
+    coverTitleA:     "Kartu Gosok ",
+    coverTitleB:     "Cinta",
+    coverText:       "Ada beberapa kartu di dalam sini. Gosok pelan-pelan pakai jarimu, dan lihat apa yang aku sembunyikan di baliknya.",
+    coverButton:     "Ambil Kartunya",
+
+    deckTitle:       "Gosok satu per satu",
+    deckSub:         "Setiap kartu menyimpan satu kenangan. Tidak usah buru-buru.",
+
+    signoffLabel:    "Dengan cinta,",
+    letterButton:    "Buka Surat Terakhir",
+
+    serialPrefix:    "LV",
+    serialYear:      "2026",
+
+    musicFile:       "music.mp3",   // musik latar
+    musicOn:         true,          // false = tombol musik disembunyikan
+    scratchSound:    true,          // suara gosokan (dibuat via WebAudio, tanpa file)
+    vibrate:         true,          // getar halus saat menggosok (Android)
+
+    revealThreshold: 80,            // % area yang tersentuh sebelum kartu terbuka sendiri
+    brushSize:       38,            // radius kuas gosok (satuan kanvas 600x420)
+    sequential:      false,         // true = kartu terkunci sampai kartu sebelumnya terbuka
+    allowRevealAll:  true,          // tombol darurat "Buka semua kartu"
+    revealAllAfter:  45,            // detik sebelum tombol darurat muncul
+
+    /* Jumlah kartu = jumlah item di bawah.
+       Foto tiap kartu = image1, image2, ... image(n) — ekstensi otomatis
+       dicoba .jpg / .JPG / .webp / .HEIC (lihat IMG_EXTS di bawah). */
+    cards: [
+      { kicker: "Kartu 01", title: "Awal cerita",    message: "Ada satu hari yang rasanya biasa saja waktu itu, tapi ternyata jadi awal dari semuanya. Aku masih ingat betul." },
+      { kicker: "Kartu 02", title: "Ketawa kamu",    message: "Ketawa yang bikin orang lain nengok. Aku nggak pernah malu, cuma diam-diam senang lihat kamu sesenang itu." },
+      { kicker: "Kartu 03", title: "Hari yang berat", message: "Kita nggak bilang apa-apa, cuma duduk bersebelahan. Ternyata itu saja sudah cukup." },
+      { kicker: "Kartu 04", title: "Tempat kita",    message: "Tempatnya sederhana, tidak istimewa buat orang lain. Tapi kalau boleh pilih, aku mau ke sana lagi sama kamu." },
+      { kicker: "Kartu 05", title: "Hal kecil",      message: "Kebiasaan kamu yang mungkin kamu sendiri nggak sadar. Justru itu yang paling aku kangenin waktu lagi sepi." },
+      { kicker: "Kartu 06", title: "Yang berikutnya", message: "Masih banyak yang belum kita jalani. Aku serius soal itu semua, dan aku mau pelan-pelan menyiapkannya sama kamu." }
+    ]
+  };
+
+  /* ============================================================
+     ELEMENTS
+     ============================================================ */
+  var $ = function(id){ return document.getElementById(id); };
+
+  var loader = $("loader"), loaderFill = $("loader-fill"), loaderPct = $("loader-pct");
+  var pageCover = $("page-cover"), pageDeck = $("page-deck"), pageLetter = $("page-letter");
+  var grid = $("grid"), wipe = $("wipe"), fx = $("fx"), flakes = $("flakes");
+  var audio = $("audio"), musicBtn = $("music-btn");
+  var modal = $("modal");
+  var finalBtn = $("final-btn"), revealAllBtn = $("revealall-btn"), backBtn = $("back-btn");
+
+  var CW = 600, CH = 420;          // resolusi internal kanvas tiap kartu
+  var GX = 24, GY = 17;            // grid jejak gosokan: sekali tersentuh = selamanya terhitung
+  var cards = [];                  // state tiap kartu
+  var resolvedSrc = {};            // cache: index kartu -> URL foto yang berhasil dimuat
+  var revealedCount = 0;
+  var letterTyped = false;
+  var audioCtx = null, noiseBuf = null, scratchNode = null, scratchGain = null;
+  var lastBuzz = 0;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ============================================================
+     APPLY CONFIG TO DOM
+     ============================================================ */
+  function applyConfig(){
+    $("cover-eyebrow").textContent = CONFIG.coverEyebrow;
+    $("cover-title").innerHTML = "";
+    $("cover-title").appendChild(document.createTextNode(CONFIG.coverTitleA));
+    var em = document.createElement("span");
+    em.textContent = CONFIG.coverTitleB;
+    $("cover-title").appendChild(em);
+
+    $("cover-name").textContent = "untuk " + CONFIG.recipientName;
+    $("cover-text").textContent = CONFIG.coverText;
+    $("open-btn").textContent = CONFIG.coverButton;
+    $("cover-serial").textContent = CONFIG.serialPrefix + "-" + CONFIG.serialYear + "-" + pad(CONFIG.cards.length);
+
+    $("deck-title").textContent = CONFIG.deckTitle;
+    $("deck-sub").textContent = CONFIG.deckSub;
+    $("letter-name").textContent = CONFIG.recipientName;
+    $("sign-label").textContent = CONFIG.signoffLabel;
+    $("sign-name").textContent = CONFIG.senderName;
+    finalBtn.textContent = CONFIG.letterButton;
+
+    if (CONFIG.musicFile) { audio.src = CONFIG.musicFile; }
+  }
+
+  function pad(n){ return (n < 10 ? "0" : "") + n; }
+
+  /* ============================================================
+     IMAGE FALLBACK
+     Setiap foto dicoba berurutan sebagai .jpg, .JPG, .webp, .HEIC —
+     berhenti begitu satu berhasil dimuat. Urutan diprioritaskan dari
+     yang paling luas didukung browser ke yang paling sempit: HEIC
+     hanya render native di Safari (iPhone/Mac), jadi selalu taruh
+     paling akhir. Cukup upload salah satu ekstensi per foto — tidak
+     perlu keempatnya.
+     ============================================================ */
+  var IMG_EXTS = ["jpg", "JPG", "webp", "HEIC"];
+
+  function resolveImage(img, basename, onResolved, onFail){
+    var idx = 0;
+
+    img.onload = function(){
+      img.onerror = null;
+      if (onResolved) { onResolved(img.src); }
+    };
+    img.onerror = function(){ tryNext(); };
+
+    function tryNext(){
+      if (idx >= IMG_EXTS.length){
+        img.onerror = null;
+        img.style.display = "none";
+        if (onFail) { onFail(); }
+        return;
+      }
+      img.src = basename + "." + IMG_EXTS[idx];
+      idx++;
+    }
+    tryNext();
+  }
+
+  /* ============================================================
+     LOADER
+     ============================================================ */
+  function runLoader(){
+    var p = 0;
+    var t = setInterval(function(){
+      p += Math.random() * 18 + 8;
+      if (p >= 100) { p = 100; clearInterval(t); setTimeout(hideLoader, 340); }
+      loaderFill.style.width = p + "%";
+      loaderPct.textContent = Math.round(p) + "%";
+    }, 170);
+  }
+  function hideLoader(){
+    loader.classList.add("out");
+    setTimeout(function(){ loader.classList.add("hidden"); }, 520);
+  }
+
+  /* ============================================================
+     AMBIENT FOIL FLAKES
+     ============================================================ */
+  function buildFlakes(){
+    if (reduced) { return; }
+    var tints = ["#FBE3CF", "#E4A17E", "#F0C05A", "#6FD3BE"];
+    var n = window.innerWidth < 600 ? 16 : 26;
+    for (var i = 0; i < n; i++){
+      var f = document.createElement("span");
+      f.className = "flake";
+      f.style.left = (Math.random() * 100) + "%";
+      f.style.background = tints[Math.floor(Math.random() * tints.length)];
+      f.style.animationDuration = (7 + Math.random() * 9) + "s";
+      f.style.animationDelay = (-Math.random() * 14) + "s";
+      f.style.height = (7 + Math.random() * 9) + "px";
+      f.style.opacity = "0";
+      flakes.appendChild(f);
+    }
+  }
+
+  /* ============================================================
+     CONFETTI / FOIL BURST
+     ============================================================ */
+  var fxCtx = fx.getContext("2d");
+  var bits = [];
+  var fxRunning = false;
+
+  function sizeFx(){
+    var d = window.devicePixelRatio || 1;
+    fx.width = Math.floor(window.innerWidth * d);
+    fx.height = Math.floor(window.innerHeight * d);
+    fx.style.width = window.innerWidth + "px";
+    fx.style.height = window.innerHeight + "px";
+    fxCtx.setTransform(d, 0, 0, d, 0, 0);
+  }
+
+  function burst(x, y){
+    if (reduced) { return; }
+    var tints = ["#FBE3CF", "#E4A17E", "#F0C05A", "#6FD3BE", "#F7F0E7"];
+    for (var i = 0; i < 46; i++){
+      var a = Math.random() * Math.PI * 2;
+      var s = 2 + Math.random() * 7;
+      bits.push({
+        x: x, y: y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s - 2.5,
+        w: 3 + Math.random() * 4,
+        h: 6 + Math.random() * 8,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - .5) * .34,
+        color: tints[Math.floor(Math.random() * tints.length)],
+        life: 1
+      });
+    }
+    if (!fxRunning) { fxRunning = true; requestAnimationFrame(stepFx); }
+  }
+
+  function stepFx(){
+    fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (var i = bits.length - 1; i >= 0; i--){
+      var b = bits[i];
+      b.vy += 0.17;
+      b.vx *= 0.99;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.rot += b.vr;
+      b.life -= 0.008;
+      if (b.life <= 0 || b.y > window.innerHeight + 40) { bits.splice(i, 1); continue; }
+      fxCtx.save();
+      fxCtx.translate(b.x, b.y);
+      fxCtx.rotate(b.rot);
+      fxCtx.globalAlpha = Math.max(0, b.life);
+      fxCtx.fillStyle = b.color;
+      fxCtx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+      fxCtx.restore();
+    }
+    if (bits.length){ requestAnimationFrame(stepFx); }
+    else { fxRunning = false; fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight); }
+  }
+
+  /* ============================================================
+     AUDIO
+     ============================================================ */
+  function startMusic(){
+    if (!CONFIG.musicFile || !CONFIG.musicOn) { return; }
+    audio.volume = 0;
+    var p = audio.play();
+    if (p && p.catch) { p.catch(function(){}); }
+    musicBtn.classList.add("show");
+    musicBtn.classList.remove("muted");
+    fade(0, 0.55, 1400);
+  }
+
+  function fade(from, to, ms){
+    var t0 = performance.now();
+    function tick(now){
+      var k = Math.min(1, (now - t0) / ms);
+      audio.volume = from + (to - from) * k;
+      if (k < 1) { requestAnimationFrame(tick); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function toggleMusic(){
+    if (audio.paused){
+      var p = audio.play();
+      if (p && p.catch) { p.catch(function(){}); }
+      musicBtn.classList.remove("muted");
+      fade(0, 0.55, 600);
+    } else {
+      audio.pause();
+      musicBtn.classList.add("muted");
+    }
+  }
+
+  function initScratchAudio(){
+    if (!CONFIG.scratchSound || audioCtx) { return; }
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { return; }
+      audioCtx = new AC();
+      var len = audioCtx.sampleRate * 2;
+      noiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      var data = noiseBuf.getChannelData(0);
+      for (var i = 0; i < len; i++){ data[i] = Math.random() * 2 - 1; }
+    } catch(e){ audioCtx = null; }
+  }
+
+  function scratchNoiseOn(){
+    if (!audioCtx || scratchNode) { return; }
+    try{
+      if (audioCtx.state === "suspended") { audioCtx.resume(); }
+      scratchNode = audioCtx.createBufferSource();
+      scratchNode.buffer = noiseBuf;
+      scratchNode.loop = true;
+      var filter = audioCtx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 2400;
+      filter.Q.value = 0.7;
+      scratchGain = audioCtx.createGain();
+      scratchGain.gain.value = 0;
+      scratchNode.connect(filter);
+      filter.connect(scratchGain);
+      scratchGain.connect(audioCtx.destination);
+      scratchNode.start();
+      scratchGain.gain.setTargetAtTime(0.055, audioCtx.currentTime, 0.03);
+    } catch(e){ scratchNode = null; }
+  }
+
+  function scratchNoiseOff(){
+    if (!scratchNode) { return; }
+    try{
+      scratchGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+      var n = scratchNode;
+      setTimeout(function(){ try{ n.stop(); }catch(e){} }, 220);
+    } catch(e){}
+    scratchNode = null;
+  }
+
+  function buzz(){
+    if (!CONFIG.vibrate || !navigator.vibrate) { return; }
+    var now = Date.now();
+    if (now - lastBuzz < 90) { return; }
+    lastBuzz = now;
+    navigator.vibrate(6);
+  }
+
+  /* ============================================================
+     BUILD CARDS
+     ============================================================ */
+  var LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+  var PHOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-6 6-2-2-5 5"/></svg>';
+
+  function buildCards(){
+    for (var i = 0; i < CONFIG.cards.length; i++){
+      grid.appendChild(makeCard(i));
+    }
+    updateMeter();
+  }
+
+  function makeCard(i){
+    var data = CONFIG.cards[i];
+
+    var el = document.createElement("div");
+    el.className = "card";
+    el.style.animationDelay = (i * 90) + "ms";
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", "Kartu " + (i + 1) + ". Gosok untuk membuka.");
+
+    var badge = document.createElement("div");
+    badge.className = "card-badge";
+    badge.textContent = CONFIG.serialPrefix + "-" + pad(i + 1);
+    el.appendChild(badge);
+
+    var face = document.createElement("div");
+    face.className = "card-face";
+
+    var img = document.createElement("img");
+    img.alt = "";
+    face.appendChild(img);
+
+    resolveImage(img, "image" + (i + 1), function(src){
+      resolvedSrc[i] = src;   // dipakai ulang oleh modal, tidak perlu coba ulang
+    }, function(){
+      var ph = document.createElement("div");
+      ph.className = "no-photo";
+      ph.innerHTML = PHOTO_SVG;
+      face.insertBefore(ph, face.firstChild);
+    });
+
+    var veil = document.createElement("div");
+    veil.className = "veil";
+    face.appendChild(veil);
+
+    var copy = document.createElement("div");
+    copy.className = "card-copy";
+    var k = document.createElement("div");
+    k.className = "card-kicker";
+    k.textContent = data.kicker;
+    var t = document.createElement("div");
+    t.className = "card-title";
+    t.textContent = data.title;
+    var h = document.createElement("div");
+    h.className = "card-hint";
+    h.textContent = "Ketuk untuk baca";
+    copy.appendChild(k); copy.appendChild(t); copy.appendChild(h);
+    face.appendChild(copy);
+    el.appendChild(face);
+
+    var cv = document.createElement("canvas");
+    cv.width = CW;
+    cv.height = CH;
+    el.appendChild(cv);
+
+    var lock = null;
+    var locked = CONFIG.sequential && i > 0;
+    if (locked){
+      lock = document.createElement("div");
+      lock.className = "card-lock";
+      lock.innerHTML = LOCK_SVG + "<span>Buka kartu sebelumnya</span>";
+      el.appendChild(lock);
+    }
+
+    var state = {
+      i: i, el: el, canvas: cv, ctx: cv.getContext("2d"),
+      lock: lock, locked: locked, revealed: false, drawing: false, last: null,
+      touched: new Uint8Array(GX * GY), touchedCount: 0
+    };
+    cards.push(state);
+
+    paintFoil(state);
+    bindScratch(state);
+
+    el.addEventListener("click", function(){
+      if (state.revealed) { openModal(i); }
+    });
+    el.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") { return; }
+      e.preventDefault();
+      if (state.revealed) { openModal(i); }
+      else if (!state.locked) { reveal(state); }   // keyboard: langsung buka
+    });
+
+    return el;
+  }
+
+  /* ---------- foil layer ---------- */
+  function paintFoil(s){
+    var c = s.ctx;
+    c.globalCompositeOperation = "source-over";
+    c.clearRect(0, 0, CW, CH);
+
+    var g = c.createLinearGradient(0, 0, CW, CH);
+    g.addColorStop(0.00, "#F6D9C2");
+    g.addColorStop(0.28, "#E4A17E");
+    g.addColorStop(0.50, "#FBE3CF");
+    g.addColorStop(0.72, "#D98C6A");
+    g.addColorStop(1.00, "#F0C05A");
+    c.fillStyle = g;
+    c.fillRect(0, 0, CW, CH);
+
+    // brushed-metal streaks
+    c.save();
+    c.globalAlpha = 0.10;
+    for (var i = 0; i < 90; i++){
+      c.fillStyle = i % 2 ? "#FFFFFF" : "#8A4A33";
+      var y = Math.random() * CH;
+      c.fillRect(0, y, CW, 1 + Math.random() * 2);
+    }
+    c.restore();
+
+    // diagonal shimmer band
+    var sh = c.createLinearGradient(0, CH, CW, 0);
+    sh.addColorStop(0.35, "rgba(255,255,255,0)");
+    sh.addColorStop(0.50, "rgba(255,255,255,.45)");
+    sh.addColorStop(0.65, "rgba(255,255,255,0)");
+    c.fillStyle = sh;
+    c.fillRect(0, 0, CW, CH);
+
+    // hearts pattern
+    c.save();
+    c.globalAlpha = 0.13;
+    c.fillStyle = "#7A3B28";
+    for (var x = 30; x < CW; x += 62){
+      for (var y2 = 30; y2 < CH; y2 += 58){
+        heart(c, x + ((y2 / 58) % 2 ? 26 : 0), y2, 7);
+      }
+    }
+    c.restore();
+
+    // instruction
+    c.save();
+    c.translate(CW / 2, CH / 2);
+    c.rotate(-0.06);
+    c.textAlign = "center";
+    c.fillStyle = "rgba(90,40,26,.6)";
+    c.font = "bold 30px 'Space Mono', monospace";
+    c.fillText("GOSOK DI SINI", 0, 6);
+    c.font = "13px 'Space Mono', monospace";
+    c.fillStyle = "rgba(90,40,26,.45)";
+    c.fillText("pakai jarimu", 0, 32);
+    c.restore();
+
+    // inner border
+    c.strokeStyle = "rgba(90,40,26,.28)";
+    c.lineWidth = 3;
+    c.setLineDash([10, 8]);
+    c.strokeRect(14, 14, CW - 28, CH - 28);
+    c.setLineDash([]);
+  }
+
+  function heart(c, x, y, r){
+    c.beginPath();
+    c.moveTo(x, y + r * 0.7);
+    c.bezierCurveTo(x, y, x - r, y, x - r, y - r * 0.45);
+    c.bezierCurveTo(x - r, y - r * 1.15, x, y - r * 1.15, x, y - r * 0.55);
+    c.bezierCurveTo(x, y - r * 1.15, x + r, y - r * 1.15, x + r, y - r * 0.45);
+    c.bezierCurveTo(x + r, y, x, y, x, y + r * 0.7);
+    c.closePath();
+    c.fill();
+  }
+
+  /* ---------- scratching ---------- */
+  function toCanvas(s, e){
+    var r = s.canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) * (CW / r.width),
+      y: (e.clientY - r.top) * (CH / r.height)
+    };
+  }
+
+  function bindScratch(s){
+    var cv = s.canvas;
+
+    cv.addEventListener("pointerdown", function(e){
+      if (s.locked || s.revealed) { return; }
+      initScratchAudio();
+      scratchNoiseOn();
+      s.drawing = true;
+      s.last = toCanvas(s, e);
+      try{ cv.setPointerCapture(e.pointerId); } catch(err){}
+      dab(s, s.last, s.last);
+      e.preventDefault();
+    });
+
+    cv.addEventListener("pointermove", function(e){
+      if (!s.drawing) { return; }
+      var p = toCanvas(s, e);
+      dab(s, s.last, p);
+      s.last = p;
+      buzz();
+      check(s);
+      e.preventDefault();
+    });
+
+    var stop = function(){
+      if (!s.drawing) { return; }
+      s.drawing = false;
+      scratchNoiseOff();
+      check(s);
+    };
+    cv.addEventListener("pointerup", stop);
+    cv.addEventListener("pointercancel", stop);
+    cv.addEventListener("pointerleave", stop);
+  }
+
+  function dab(s, a, b){
+    var c = s.ctx;
+    c.globalCompositeOperation = "destination-out";
+    c.lineCap = "round";
+    c.lineJoin = "round";
+    c.lineWidth = CONFIG.brushSize * 2;
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.lineTo(b.x, b.y);
+    c.stroke();
+    c.beginPath();
+    c.arc(b.x, b.y, CONFIG.brushSize, 0, Math.PI * 2);
+    c.fill();
+    mark(s, a, b);
+  }
+
+  /* Jejak gosokan dicatat di grid: begitu satu sel tersentuh, sel itu
+     terhitung bersih selamanya. Tidak perlu menggosok bolak-balik. */
+  function mark(s, a, b){
+    var cw = CW / GX, ch = CH / GY;
+    var r = CONFIG.brushSize;
+    var dist = Math.hypot(b.x - a.x, b.y - a.y);
+    var steps = Math.max(1, Math.ceil(dist / (r * 0.6)));
+
+    for (var t = 0; t <= steps; t++){
+      var px = a.x + (b.x - a.x) * (t / steps);
+      var py = a.y + (b.y - a.y) * (t / steps);
+      var c0 = Math.max(0, Math.floor((px - r) / cw));
+      var c1 = Math.min(GX - 1, Math.floor((px + r) / cw));
+      var r0 = Math.max(0, Math.floor((py - r) / ch));
+      var r1 = Math.min(GY - 1, Math.floor((py + r) / ch));
+
+      for (var gy = r0; gy <= r1; gy++){
+        for (var gx = c0; gx <= c1; gx++){
+          var idx = gy * GX + gx;
+          if (s.touched[idx]) { continue; }
+          var dx = (gx + 0.5) * cw - px;
+          var dy = (gy + 0.5) * ch - py;
+          if (dx * dx + dy * dy <= r * r){
+            s.touched[idx] = 1;
+            s.touchedCount++;
+          }
+        }
+      }
+    }
+  }
+
+  function progressOf(s){
+    return (s.touchedCount / (GX * GY)) * 100;
+  }
+
+  function check(s){
+    if (s.revealed) { return; }
+    if (progressOf(s) >= CONFIG.revealThreshold) { reveal(s); }
+  }
+
+  function reveal(s){
+    if (s.revealed) { return; }
+    s.revealed = true;
+    s.drawing = false;
+    scratchNoiseOff();
+    s.el.classList.add("cleared");
+    s.el.setAttribute("aria-label", "Kartu " + (s.i + 1) + " terbuka. Ketuk untuk baca.");
+
+    var r = s.el.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2);
+    if (CONFIG.vibrate && navigator.vibrate) { navigator.vibrate([12, 40, 18]); }
+
+    revealedCount++;
+    updateMeter();
+    unlockNext(s.i);
+
+    if (revealedCount === cards.length){
+      setTimeout(function(){
+        finalBtn.classList.remove("hidden");
+        revealAllBtn.classList.add("hidden");
+        finalBtn.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+      }, 900);
+    }
+  }
+
+  function unlockNext(i){
+    var nxt = cards[i + 1];
+    if (!nxt || !nxt.locked) { return; }
+    nxt.locked = false;
+    if (nxt.lock && nxt.lock.parentNode) { nxt.lock.parentNode.removeChild(nxt.lock); }
+  }
+
+  function updateMeter(){
+    var pct = cards.length ? (revealedCount / cards.length) * 100 : 0;
+    $("meter-fill").style.width = pct + "%";
+    $("meter-label").textContent = revealedCount + " dari " + cards.length + " kartu terbuka";
+  }
+
+  /* ============================================================
+     MODAL
+     ============================================================ */
+  var modalIndex = 0;
+
+  function openModal(i){
+    modalIndex = i;
+    var d = CONFIG.cards[i];
+    var img = $("modal-photo");
+    $("modal-photo-wrap").style.display = "";
+    img.style.display = "";
+    if (resolvedSrc[i]){
+      img.src = resolvedSrc[i];
+    } else {
+      resolveImage(img, "image" + (i + 1), function(src){
+        resolvedSrc[i] = src;
+      }, function(){
+        $("modal-photo-wrap").style.display = "none";
+      });
+    }
+    $("modal-kicker").textContent = d.kicker;
+    $("modal-title").textContent = d.title;
+    $("modal-msg").textContent = d.message;
+    $("modal-prev").disabled = !hasNeighbor(i, -1);
+    $("modal-next").disabled = !hasNeighbor(i, 1);
+    modal.classList.remove("hidden");
+  }
+
+  function hasNeighbor(i, dir){
+    for (var j = i + dir; j >= 0 && j < cards.length; j += dir){
+      if (cards[j].revealed) { return true; }
+    }
+    return false;
+  }
+
+  function hop(dir){
+    for (var j = modalIndex + dir; j >= 0 && j < cards.length; j += dir){
+      if (cards[j].revealed) { openModal(j); return; }
+    }
+  }
+
+  $("modal-close").addEventListener("click", function(){ modal.classList.add("hidden"); });
+  $("modal-prev").addEventListener("click", function(){ hop(-1); });
+  $("modal-next").addEventListener("click", function(){ hop(1); });
+  modal.addEventListener("click", function(e){
+    if (e.target === modal) { modal.classList.add("hidden"); }
+  });
+  document.addEventListener("keydown", function(e){
+    if (modal.classList.contains("hidden")) { return; }
+    if (e.key === "Escape") { modal.classList.add("hidden"); }
+    if (e.key === "ArrowLeft") { hop(-1); }
+    if (e.key === "ArrowRight") { hop(1); }
+  });
+
+  /* ============================================================
+     PAGE FLOW
+     ============================================================ */
+  function show(page){
+    pageCover.classList.add("hidden");
+    pageDeck.classList.add("hidden");
+    pageLetter.classList.add("hidden");
+    page.classList.remove("hidden");
+    window.scrollTo(0, 0);
+  }
+
+  $("open-btn").addEventListener("click", function(){
+    startMusic();          // autoplay harus dipicu di dalam handler tap
+    initScratchAudio();
+    wipe.classList.add("run");
+    setTimeout(function(){ show(pageDeck); }, reduced ? 0 : 520);
+    setTimeout(function(){ wipe.classList.remove("run"); }, 1300);
+
+    if (CONFIG.allowRevealAll){
+      setTimeout(function(){
+        if (revealedCount < cards.length) { revealAllBtn.classList.remove("hidden"); }
+      }, CONFIG.revealAllAfter * 1000);
+    }
+  });
+
+  revealAllBtn.addEventListener("click", function(){
+    for (var i = 0; i < cards.length; i++){
+      cards[i].locked = false;
+      (function(s, delay){
+        setTimeout(function(){ reveal(s); }, delay);
+      })(cards[i], i * 180);
+    }
+    revealAllBtn.classList.add("hidden");
+  });
+
+  finalBtn.addEventListener("click", function(){
+    show(pageLetter);
+    if (!letterTyped) { letterTyped = true; typeLetter(); }
+  });
+
+  backBtn.addEventListener("click", function(){ show(pageDeck); });
+
+  musicBtn.addEventListener("click", toggleMusic);
+
+  /* ============================================================
+     LETTER TYPEWRITER
+     ============================================================ */
+  function typeLetter(){
+    var src = $("letter-source").getElementsByTagName("p");
+    var body = $("letter-body");
+    var lines = [];
+    var nodes = [];
+
+    for (var i = 0; i < src.length; i++){
+      lines.push(src[i].textContent.trim());
+      var p = document.createElement("p");
+      p.textContent = "";              // dikosongkan dulu, biar tidak ada kedipan teks
+      body.appendChild(p);
+      nodes.push(p);
+    }
+
+    if (reduced){
+      for (var j = 0; j < lines.length; j++){ nodes[j].textContent = lines[j]; }
+      $("letter-sign").classList.add("in");
+      return;
+    }
+
+    var li = 0, ci = 0;
+    function step(){
+      if (li >= lines.length){
+        $("letter-sign").classList.add("in");
+        return;
+      }
+      var node = nodes[li];
+      node.classList.add("caret");
+      if (ci < lines[li].length){
+        node.textContent += lines[li].charAt(ci);
+        ci++;
+        setTimeout(step, 22);
+      } else {
+        node.classList.remove("caret");
+        li++; ci = 0;
+        setTimeout(step, 420);
+      }
+    }
+    setTimeout(step, 500);
+  }
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  function init(){
+    applyConfig();
+    sizeFx();
+    buildFlakes();
+    buildCards();
+    runLoader();
+    if (!CONFIG.musicOn || !CONFIG.musicFile) { musicBtn.classList.remove("show"); }
+  }
+
+  window.addEventListener("resize", sizeFx);
+  init();
+})();
+</script>
+</body>
+</html>
