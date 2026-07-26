@@ -16,10 +16,27 @@ const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+const TITLE = "Lovamoment.id: Hadiah Digital Personal untuk Orang Tersayang";
+const DESCRIPTION =
+  "Kirim kenangan lewat website personal. Surat digital, ucapan ulang tahun, dan template interaktif untuk pasangan, sahabat, dan keluarga.";
+
 export const metadata: Metadata = {
-  title: "Lovamoment.id: Hadiah Digital Personal untuk Orang Tersayang",
-  description:
-    "Kirim kenangan lewat website personal. Surat digital, ucapan ulang tahun, dan template interaktif untuk pasangan, sahabat, dan keluarga.",
+  metadataBase: new URL("https://lovamoment.id"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "Lovamoment.id",
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
