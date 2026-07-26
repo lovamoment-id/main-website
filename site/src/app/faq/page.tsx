@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "Metode pembayaran apa saja yang didukung?",
-    a: "QRIS, GoPay, OVO, DANA, ShopeePay, transfer bank (Virtual Account), kartu debit/kredit, dan gerai retail. Semua diproses aman lewat payment gateway.",
+    a: "QRIS, GoPay, OVO, DANA, ShopeePay, dan transfer bank (Virtual Account). Semua diproses aman lewat payment gateway.",
   },
   {
     q: "Bisa revisi kalau ada kesalahan data atau typo?",

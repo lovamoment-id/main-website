@@ -36,8 +36,8 @@ export default function HeroPhone() {
         Aktif selamanya
       </span>
 
-      <div className="relative rounded-[2.2rem] border-[6px] border-text/85 bg-text/85 shadow-lg">
-        <div className="absolute left-1/2 top-[6px] z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-bg/25" />
+      <div className="relative rounded-[2.2rem] border-[6px] border-black bg-black shadow-xl shadow-black/25">
+        <div className="absolute left-1/2 top-[6px] z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-white/20" />
         <div className="relative overflow-hidden rounded-[1.7rem] bg-bg" style={{ aspectRatio: width + "/" + height }}>
           {frames.map((src, i) => (
             <Image
