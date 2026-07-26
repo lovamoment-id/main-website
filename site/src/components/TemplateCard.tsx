@@ -4,7 +4,7 @@ import DemoButton from "@/components/DemoButton";
 import type { Template } from "@/lib/templates";
 import {
   formatRupiah,
-  getSampleImages,
+  getCoverImage,
   tagLabels,
   tierBadgeLabels,
 } from "@/lib/templates";
@@ -24,25 +24,19 @@ const STATUS_BADGE_STYLES: Record<string, string> = {
 };
 
 export default function TemplateCard({ template }: { template: Template }) {
-  const [cover] = getSampleImages(template);
+  const cover = getCoverImage(template);
   const tierBadge = tierBadgeLabels[template.tier];
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-primary/12 bg-surface transition-colors hover:border-primary/30">
       <Link href={`/template/${template.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-bg">
-        {cover ? (
-          <Image
-            src={cover}
-            alt={template.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5">
-            <span className="font-display text-4xl text-primary/70">♥</span>
-          </div>
-        )}
+        <Image
+          src={cover}
+          alt={template.name}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
 
         {/* At most two badges: one tier (left) and one status (right). */}
         {tierBadge && (

@@ -30,6 +30,15 @@ export type Template = {
    * design brief §10. Independent of photoCount, which counts buyer photo slots.
    */
   sampleCount: number;
+  /**
+   * Which sample image (1-indexed) leads the catalogue card and detail-page
+   * hero. Defaults to 1. Some templates open on a plain "tap to open" screen
+   * that reads as nearly blank at thumbnail size, so this points the cover
+   * at a later, more visually representative screenshot instead. The detail
+   * page's gallery strip still lists every sample in its original 1..N order,
+   * per design brief §10, so the opening-screen narrative isn't disturbed.
+   */
+  coverSample?: number;
   supportsMusic: boolean;
   soldCount: number;
   statusBadge: StatusBadge | null;
@@ -99,6 +108,7 @@ export const templates: Template[] = [
     demoUrl: "https://kotak-musik-lovamoment.vercel.app/",
     photoCount: 3,
     sampleCount: 2,
+    coverSample: 2,
     supportsMusic: true,
     soldCount: 34,
     statusBadge: null,
@@ -354,7 +364,7 @@ export const templates: Template[] = [
   },
   {
     slug: "premium-birthday-blush",
-    name: "Birthday Blush",
+    name: "Birthday Blush - Exclusive",
     tagline: "Ucapan ulang tahun mewah dengan nuansa blush pink",
     tier: "EXCLUSIVE",
     tags: ["BIRTHDAY"],
@@ -363,6 +373,7 @@ export const templates: Template[] = [
     demoUrl: "https://premium-birthday-blush-lovamoment.vercel.app/",
     photoCount: 6,
     sampleCount: 7,
+    coverSample: 7,
     supportsMusic: true,
     soldCount: 63,
     statusBadge: "#1 TERLARIS",
@@ -376,7 +387,7 @@ export const templates: Template[] = [
   },
   {
     slug: "premium-birthday-nostalgic",
-    name: "Birthday Nostalgic",
+    name: "Birthday Nostalgic - Exclusive",
     tagline: "Ucapan ulang tahun mewah dengan nuansa nostalgic",
     tier: "EXCLUSIVE",
     tags: ["BIRTHDAY"],
@@ -385,6 +396,7 @@ export const templates: Template[] = [
     demoUrl: "https://premium-birthday-nostalgic-lovamoment.vercel.app/",
     photoCount: 6,
     sampleCount: 7,
+    coverSample: 7,
     supportsMusic: true,
     soldCount: 20,
     statusBadge: null,
@@ -398,7 +410,7 @@ export const templates: Template[] = [
   },
   {
     slug: "premium-birthday-midnight",
-    name: "Birthday Midnight",
+    name: "Birthday Midnight - Exclusive",
     tagline: "Ucapan ulang tahun mewah dengan nuansa midnight gold",
     tier: "EXCLUSIVE",
     tags: ["BIRTHDAY"],
@@ -407,6 +419,7 @@ export const templates: Template[] = [
     demoUrl: "https://premium-birthday-midnight-lovamoment.vercel.app/",
     photoCount: 6,
     sampleCount: 7,
+    coverSample: 7,
     supportsMusic: true,
     soldCount: 51,
     statusBadge: "POPULAR",
@@ -429,6 +442,11 @@ export function getSampleImages(template: Template): string[] {
     { length: template.sampleCount },
     (_, i) => `/templates/${template.slug}/sample${i + 1}.jpg`,
   );
+}
+
+/** The card/hero cover image: coverSample if set, otherwise sample1. */
+export function getCoverImage(template: Template): string {
+  return `/templates/${template.slug}/sample${template.coverSample ?? 1}.jpg`;
 }
 
 /** Filter chip order on the gallery. */

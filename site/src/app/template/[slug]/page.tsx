@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import DemoButton from "@/components/DemoButton";
 import {
   formatRupiah,
+  getCoverImage,
   getSampleImages,
   getTemplateBySlug,
   tagLabels,
@@ -29,6 +30,11 @@ export default async function TemplateDetailPage({
   }
 
   const images = getSampleImages(template);
+  const cover = getCoverImage(template);
+  // Rest of the gallery strip, in their original 1..N order, minus whichever
+  // one is already shown as the hero above (design brief §10 still lists them
+  // in that order; only which one leads changes).
+  const gallery = images.filter((src) => src !== cover);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
@@ -42,7 +48,7 @@ export default async function TemplateDetailPage({
             <div className="grid gap-3">
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-bg">
                 <Image
-                  src={images[0]}
+                  src={cover}
                   alt={template.name}
                   fill
                   sizes="(min-width: 1024px) 50vw, 100vw"
@@ -50,9 +56,9 @@ export default async function TemplateDetailPage({
                   priority
                 />
               </div>
-              {images.length > 1 && (
+              {gallery.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
-                  {images.slice(1).map((src) => (
+                  {gallery.map((src) => (
                     <div key={src} className="relative aspect-square overflow-hidden rounded-xl bg-bg">
                       <Image src={src} alt={template.name} fill sizes="33vw" className="object-cover" />
                     </div>
