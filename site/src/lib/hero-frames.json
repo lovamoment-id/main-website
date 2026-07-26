@@ -1,0 +1,16 @@
+{
+  "width": 360,
+  "height": 640,
+  "frames": [
+    "/hero/frame01.webp",
+    "/hero/frame02.webp",
+    "/hero/frame03.webp",
+    "/hero/frame04.webp",
+    "/hero/frame05.webp",
+    "/hero/frame06.webp",
+    "/hero/frame07.webp",
+    "/hero/frame08.webp",
+    "/hero/frame09.webp",
+    "/hero/frame10.webp"
+  ]
+}
