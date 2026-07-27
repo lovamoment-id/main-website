@@ -230,7 +230,12 @@ body {
 /* =========================================================
    CONFIG — edit per order
    ========================================================= */
+var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+  LOVAMOMENT_ASSET_BASE = '';
+}
 var CONFIG = {
+  ASSET_BASE: LOVAMOMENT_ASSET_BASE,
   CENTER_TEXT: "Love you",
   GATE_TITLE: "For my Zia",
   GATE_PROMPT: "Ketuk di mana saja untuk membuka",
@@ -711,7 +716,7 @@ window.addEventListener("resize", function () {
    Music + mute
    ========================================================= */
 var music = document.getElementById("bg-music");
-music.src = CONFIG.MUSIC_FILE;
+music.src = CONFIG.ASSET_BASE + CONFIG.MUSIC_FILE;
 music.volume = CONFIG.MUSIC_VOLUME;
 
 var muteBtn = document.getElementById("mute-btn");

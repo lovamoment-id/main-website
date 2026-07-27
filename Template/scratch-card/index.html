@@ -784,7 +784,12 @@ body::after{
   /* ============================================================
      CONFIG - edit bagian ini untuk tiap order
      ============================================================ */
+  var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+  if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+    LOVAMOMENT_ASSET_BASE = '';
+  }
   var CONFIG = {
+    ASSET_BASE: LOVAMOMENT_ASSET_BASE,
     recipientName:   "Zia",
     senderName:      "Leo",
 
@@ -872,7 +877,7 @@ body::after{
     $("sign-name").textContent = CONFIG.senderName;
     finalBtn.textContent = CONFIG.letterButton;
 
-    if (CONFIG.musicFile) { audio.src = CONFIG.musicFile; }
+    if (CONFIG.musicFile) { audio.src = CONFIG.ASSET_BASE + CONFIG.musicFile; }
   }
 
   function pad(n){ return (n < 10 ? "0" : "") + n; }
@@ -904,7 +909,7 @@ body::after{
         if (onFail) { onFail(); }
         return;
       }
-      img.src = basename + "." + IMG_EXTS[idx];
+      img.src = CONFIG.ASSET_BASE + basename + "." + IMG_EXTS[idx];
       idx++;
     }
     tryNext();

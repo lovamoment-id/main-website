@@ -880,7 +880,12 @@ img{max-width:100%;display:block;}
   "use strict";
 
   /* ================= CONFIG ================= */
+  var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+  if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+    LOVAMOMENT_ASSET_BASE = '';
+  }
   var CONFIG = {
+    ASSET_BASE: LOVAMOMENT_ASSET_BASE,
     recipientName: "Zia",
     senderName: "Leo",
     age: 25,
@@ -928,7 +933,7 @@ img{max-width:100%;display:block;}
   $("song-artist").textContent = CONFIG.songArtist;
 
   var music = $("bg-music");
-  music.src = CONFIG.musicFile;
+  music.src = CONFIG.ASSET_BASE + CONFIG.musicFile;
 
   /* hero title split into animated words */
   (function buildHeroTitle(){
@@ -954,7 +959,7 @@ img{max-width:100%;display:block;}
         frameEl.style.display = "none";
         return;
       }
-      imgEl.src = "image" + (index + 1) + "." + IMAGE_EXTENSIONS[extIdx];
+      imgEl.src = CONFIG.ASSET_BASE + "image" + (index + 1) + "." + IMAGE_EXTENSIONS[extIdx];
       extIdx += 1;
     }
     imgEl.addEventListener("error", tryNext);

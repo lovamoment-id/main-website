@@ -469,7 +469,12 @@ body{
 /* =========================================================
    CONFIG  —  edit everything here
    ========================================================= */
+var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+  LOVAMOMENT_ASSET_BASE = '';
+}
 var CONFIG = {
+  ASSET_BASE: LOVAMOMENT_ASSET_BASE,
   /* header sign */
   topTitle    : "Gacha Cinta",
   names       : "Leo &amp; Zia",
@@ -581,7 +586,7 @@ function applyConfig(){
   $('topNames').innerHTML = CONFIG.names;
   $('plateTxt').innerHTML = CONFIG.plateText;
   $('coinTxt').innerHTML  = CONFIG.coinText;
-  bgm.src = CONFIG.musicFile;
+  bgm.src = CONFIG.ASSET_BASE + CONFIG.musicFile;
   $('npTitle').innerHTML  = CONFIG.musicTitle;
 }
 
@@ -941,7 +946,7 @@ function buildPhotoCard(n){
   img.alt = '';
   img.onload  = function(){ frame.classList.remove('hidden'); };
   img.onerror = function(){ miss.classList.remove('hidden'); };
-  img.src = 'image' + n + '.jpg';
+  img.src = CONFIG.ASSET_BASE + 'image' + n + '.jpg';
   frame.appendChild(img);
 
   var cap = document.createElement('div');

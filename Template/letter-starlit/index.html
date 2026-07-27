@@ -375,7 +375,12 @@ body::after{
      ⚙  CONFIG  —  edit these per order
 ============================================================ -->
 <script>
+var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+  LOVAMOMENT_ASSET_BASE = '';
+}
 var CONFIG = {
+  ASSET_BASE: LOVAMOMENT_ASSET_BASE,
   recipientName: "Zia",              // who it's for
   senderName:    "Leo",              // who it's from
   numImages:     3,                  // uses image1.jpg ... imageN.jpg
@@ -538,7 +543,7 @@ var CONFIG = {
 
   /* ---------- music (autoplay-safe: first play inside tap handler) ---------- */
   var music = $("bg-music");
-  music.src = CONFIG.musicFile;
+  music.src = CONFIG.ASSET_BASE + CONFIG.musicFile;
   var musicOn = false;
   var musicToggle = $("music-toggle");
 
@@ -714,7 +719,7 @@ var CONFIG = {
     }
     photoImg.onload = function(){ photoImg.style.opacity = "1"; };
     photoImg.onerror = function(){ tryImageExtension(n, extIndex + 1); };
-    photoImg.src = "image" + n + "." + IMAGE_EXTENSIONS[extIndex];
+    photoImg.src = CONFIG.ASSET_BASE + "image" + n + "." + IMAGE_EXTENSIONS[extIndex];
   }
   function openPhotos(){ current = 0; show(modal); loadPhoto(); }
   function nextPhoto(){ current = (current + 1) % total; loadPhoto(); }

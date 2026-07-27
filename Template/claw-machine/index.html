@@ -614,7 +614,12 @@ button{font-family:inherit;border:none;background:none;cursor:pointer;color:inhe
 /* ============================================================
    CONFIG - edit per order
    ============================================================ */
+var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+  LOVAMOMENT_ASSET_BASE = '';
+}
 var CONFIG = {
+  ASSET_BASE: LOVAMOMENT_ASSET_BASE,
   /* --- names --- */
   recipientName: 'Zia',
   senderName: 'Leo',
@@ -1120,14 +1125,14 @@ function fillLetter(){
   img.alt = CONFIG.recipientName;
   img.onload = function(){ $('photoWrap').classList.remove('hidden'); };
   img.onerror = function(){ $('photoWrap').classList.add('hidden'); };
-  img.src = CONFIG.photoFile;
+  img.src = CONFIG.ASSET_BASE + CONFIG.photoFile;
 }
 
 function openLetter(){
   if(!state.won){ return; }
   /* music must start inside this gesture handler */
   if(CONFIG.musicFile){
-    bgm.src = CONFIG.musicFile;
+    bgm.src = CONFIG.ASSET_BASE + CONFIG.musicFile;
     bgm.volume = CONFIG.musicVolume;
     var pr = bgm.play();
     if(pr && pr.catch){ pr.catch(function(){ /* blocked, ignore */ }); }

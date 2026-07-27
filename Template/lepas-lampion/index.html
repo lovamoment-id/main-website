@@ -238,7 +238,12 @@
 
 <script>
   /* ========================= CONFIG ========================= */
+  var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+  if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+    LOVAMOMENT_ASSET_BASE = '';
+  }
   var CONFIG = {
+    ASSET_BASE: LOVAMOMENT_ASSET_BASE,
     recipientName: "Zia",
     senderName:    "Leo",
     occasion:      "Untukmu",
@@ -345,7 +350,7 @@
      stop at the first one that loads, mark missing if none of them exist */
   function tryImageExtensions(baseName, extIndex, onFound, onNotFound) {
     if (extIndex >= CONFIG.imageExtensions.length) { onNotFound(); return; }
-    var src = baseName + "." + CONFIG.imageExtensions[extIndex];
+    var src = CONFIG.ASSET_BASE + baseName + "." + CONFIG.imageExtensions[extIndex];
     var test = new Image();
     test.addEventListener("load", function () { onFound(src); });
     test.addEventListener("error", function () {
@@ -369,7 +374,7 @@
   })();
 
   /* ---- audio ---- */
-  player.src = CONFIG.musicFile;
+  player.src = CONFIG.ASSET_BASE + CONFIG.musicFile;
   var audioReady = true;
   player.addEventListener("error", function () { audioReady = false; audioBtn.style.display = "none"; });
   function updateAudioIcon() { audioBtn.innerHTML = player.paused ? "&#9834;" : "&#9835;"; }

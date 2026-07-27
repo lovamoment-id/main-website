@@ -463,7 +463,12 @@
   "use strict";
 
   /* ================= CONFIG — edit per order ================= */
+  var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+  if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+    LOVAMOMENT_ASSET_BASE = '';
+  }
   var CONFIG = {
+    ASSET_BASE: LOVAMOMENT_ASSET_BASE,
     sceneMode:    "sunset",                 // "sunset" atau "night"
     fromName:     "Leo",                    // untuk tanda tangan
     forName:      "Zia",                    // muncul di layar "Untuk"
@@ -513,7 +518,7 @@
     if (CONFIG.photoCaption) { cap.textContent = CONFIG.photoCaption; }
     else { cap.style.display = "none"; }
     img.addEventListener("error", function () { frame.style.display = "none"; });
-    img.src = CONFIG.imageFile;
+    img.src = CONFIG.ASSET_BASE + CONFIG.imageFile;
 
     // memory photos (scroll 2) — hide a missing polaroid; hide the whole scroll if both fail
     var missing = 0;
@@ -525,14 +530,14 @@
         missing++;
         if (missing >= 2) { document.getElementById("scroll2").style.display = "none"; }
       });
-      im.src = src;
+      im.src = CONFIG.ASSET_BASE + src;
     }
     wire("photo2", "pol2", CONFIG.image2File);
     wire("photo3", "pol3", CONFIG.image3File);
   })();
 
   // --- music (mobile-safe: starts on first user gesture) ---
-  var audio = new Audio(CONFIG.musicFile);
+  var audio = new Audio(CONFIG.ASSET_BASE + CONFIG.musicFile);
   audio.loop = true;
   var musicOn = false;
   var musicOk = true;

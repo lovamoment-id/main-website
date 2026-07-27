@@ -223,7 +223,12 @@
   "use strict";
 
   /* ================= CONFIG — edit per order ================= */
+  var LOVAMOMENT_ASSET_BASE = '__LOVAMOMENT_ASSET_BASE__';
+  if (LOVAMOMENT_ASSET_BASE.indexOf('LOVAMOMENT_ASSET_BASE') !== -1) {
+    LOVAMOMENT_ASSET_BASE = '';
+  }
   var CONFIG = {
+    ASSET_BASE: LOVAMOMENT_ASSET_BASE,
     title:       "Our Night Sky",
     fromName:    "Leo",
     forName:     "Zia",
@@ -252,7 +257,7 @@
     var idx = 0;
     function tryNext() {
       if (idx >= exts.length) { if (onAllFail) onAllFail(); return; }
-      imgEl.src = baseName + "." + exts[idx];
+      imgEl.src = CONFIG.ASSET_BASE + baseName + "." + exts[idx];
       idx++;
     }
     imgEl.onerror = tryNext;
@@ -276,7 +281,7 @@
   document.getElementById("sky-date").textContent = dateCaption;
 
   // ----- music (mobile-safe: starts on first gesture) -----
-  var audio = new Audio(CONFIG.musicFile);
+  var audio = new Audio(CONFIG.ASSET_BASE + CONFIG.musicFile);
   audio.loop = true;
   var musicOn = false, musicOk = true;
   var musicBtn = document.getElementById("music-btn");
