@@ -8,7 +8,6 @@ import {
   tagLabels,
   tierBadgeLabels,
 } from "@/lib/templates";
-import { waLink } from "@/lib/whatsapp";
 
 /* Gold is too light to carry text on a light surface (2.35:1), so EXCLUSIVE
    uses the gold as a tint behind dark text instead of as the text colour. */
@@ -116,14 +115,12 @@ export default function TemplateCard({ template }: { template: Template }) {
           >
             Lihat
           </DemoButton>
-          <a
-            href={waLink(`Halo, saya mau pesan template "${template.name}" 💌`)}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={`/order/${template.slug}`}
             className="flex-1 rounded-full bg-primary px-3 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-primary/90"
           >
             Pesan
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -11,7 +11,6 @@ import {
   templates,
   tierLabels,
 } from "@/lib/templates";
-import { waLink } from "@/lib/whatsapp";
 
 export function generateStaticParams() {
   return templates.map((t) => ({ slug: t.slug }));
@@ -148,17 +147,15 @@ export default async function TemplateDetailPage({
             >
               Lihat Demo
             </DemoButton>
-            <a
-              href={waLink(`Halo, saya mau pesan template "${template.name}" 💌`)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/order/${template.slug}`}
               className="flex-1 rounded-full bg-primary px-6 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary/90"
             >
               Pesan Sekarang
-            </a>
+            </Link>
           </div>
           <p className="mt-3 text-xs text-text-muted">
-            Live preview otomatis dan checkout online akan segera hadir. Untuk sekarang, klik untuk chat langsung via WhatsApp.
+            Isi datanya lewat form, lalu pembayaran dan pengiriman foto dilakukan via WhatsApp.
           </p>
         </div>
       </div>
