@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Field, TemplateSchema } from "@/lib/order-schema";
+import FileSlots, { type PickedFiles } from "./FileSlots";
 import { submitOrder, type OrderFormState } from "./actions";
 
 const INITIAL: OrderFormState = { error: null };
@@ -60,15 +62,85 @@ function FieldRow({ field, name }: { field: Field; name: string }) {
 export default function OrderForm({
   templateSlug,
   schema,
-  photoCount,
   supportsMusic,
 }: {
   templateSlug: string;
   schema: TemplateSchema;
-  photoCount: number;
   supportsMusic: boolean;
 }) {
   const [state, formAction, pending] = useActionState(submitOrder, INITIAL);
+  const router = useRouter();
+
+  const [picked, setPicked] = useState<PickedFiles>({ photos: [], music: null });
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // The action deliberately returns tickets instead of redirecting, because the
+  // bytes cannot travel through it. Once tickets arrive, push each file straight
+  // to Supabase, then move on to the confirmation page.
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state.ok || !state.orderSlug) return;
+    if (handled.current === state.orderSlug) return; // guard against re-runs
+    handled.current = state.orderSlug;
+
+    const tickets = state.tickets ?? [];
+    const slug = state.orderSlug;
+
+    async function run() {
+      if (tickets.length === 0) {
+        router.push("/order/konfirmasi/" + slug);
+        return;
+      }
+
+      setUploading(true);
+      setProgress({ done: 0, total: tickets.length });
+
+      const bySlot = new Map<string, File>();
+      picked.photos.forEach((f, i) => bySlot.set("photo" + i, f));
+      if (picked.music) bySlot.set("music", picked.music);
+
+      let done = 0;
+      for (const ticket of tickets) {
+        const file = bySlot.get(ticket.slot);
+        if (!file) continue;
+        try {
+          const res = await fetch(ticket.signedUrl, {
+            method: "PUT",
+            headers: { "content-type": file.type || "application/octet-stream" },
+            body: file,
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+        } catch {
+          // The order row already exists, so the buyer is not stuck: tell them
+          // what happened and let the admin collect the file over chat.
+          setUploading(false);
+          setUploadError(
+            "Pesanan tersimpan, tapi ada berkas yang gagal diunggah. Lanjut saja, nanti kami minta lewat WhatsApp.",
+          );
+          setTimeout(() => router.push("/order/konfirmasi/" + slug), 2500);
+          return;
+        }
+        done++;
+        setProgress({ done, total: tickets.length });
+      }
+
+      router.push("/order/konfirmasi/" + slug);
+    }
+
+    void run();
+  }, [state.ok, state.orderSlug, state.tickets, picked, router]);
+
+  const busy = pending || uploading;
+  const maxPhotos = schema.photos
+    ? schema.photos.max
+    : (schema.groups ?? []).filter((g) => g.withPhoto).reduce((a, g) => a + g.count, 0);
+  const photoHelp = schema.photos
+    ? schema.photos.help
+    : (schema.groups ?? []).some((g) => g.withPhoto)
+      ? "Satu foto untuk tiap bagian di atas, sesuai urutannya."
+      : "";
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -148,33 +220,47 @@ export default function OrderForm({
         </label>
       </fieldset>
 
-      <div className="rounded-2xl border border-primary/12 bg-surface p-5 text-sm text-text-muted">
-        <p className="font-medium text-text">Foto dan musik dikirim lewat WhatsApp</p>
-        <p className="mt-1.5 leading-relaxed">
-          {schema.photos
-            ? schema.photos.help + " "
-            : (schema.groups ?? []).some((g) => g.withPhoto)
-              ? "Satu foto untuk tiap bagian di atas. "
-              : ""}
-          {photoCount > 0 || (schema.groups ?? []).some((g) => g.withPhoto)
-            ? "Kami akan meminta fotonya lewat chat setelah pesanan ini masuk. "
-            : ""}
-          {supportsMusic && schema.musicHelp}
-        </p>
-      </div>
+      <FileSlots
+        maxPhotos={maxPhotos}
+        minPhotos={schema.photos?.min ?? 0}
+        photoHelp={photoHelp}
+        supportsMusic={supportsMusic}
+        musicHelp={schema.musicHelp}
+        onChange={setPicked}
+        disabled={busy}
+      />
 
       {state.error && (
         <p role="alert" className="text-sm font-medium text-primary">
           {state.error}
         </p>
       )}
+      {uploadError && (
+        <p role="alert" className="text-sm font-medium text-primary">
+          {uploadError}
+        </p>
+      )}
+
+      {uploading && progress.total > 0 && (
+        <div className="flex flex-col gap-2" aria-live="polite">
+          <p className="text-sm text-text-muted">
+            Mengunggah berkas {progress.done} dari {progress.total}...
+          </p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-primary/10">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: Math.round((progress.done / progress.total) * 100) + "%" }}
+            />
+          </div>
+        </div>
+      )}
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={busy}
         className="rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
-        {pending ? "Menyimpan..." : "Kirim Pesanan"}
+        {pending ? "Menyimpan..." : uploading ? "Mengunggah berkas..." : "Kirim Pesanan"}
       </button>
     </form>
   );

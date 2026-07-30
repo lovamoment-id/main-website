@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE, isSessionTokenValid } from "@/lib/admin-auth";
-import { markOrderPaid, setOrderAssetBase } from "@/lib/orders";
+import { getOrderById, markOrderPaid, setOrderAssetBase } from "@/lib/orders";
+import { processOrderAssets } from "@/lib/process-assets";
+import { assetBaseUrl } from "@/lib/storage";
+import { getSupabase } from "@/lib/supabase";
 
 /**
- * Activates an order: stores asset_base, then flips it to paid.
+ * Activates an order: converts the buyer's uploads, then flips it to paid.
  *
  * The session is re-checked here even though proxy.ts already gates
  * /api/admin/*. The Next docs are explicit that Proxy is not a substitute for
@@ -22,37 +25,82 @@ export async function POST(
 
   const { id } = await ctx.params;
 
-  let assetBase = "";
+  let manualAssetBase = "";
   try {
     const body = (await request.json()) as { assetBase?: unknown };
-    assetBase = typeof body.assetBase === "string" ? body.assetBase.trim() : "";
+    manualAssetBase = typeof body.assetBase === "string" ? body.assetBase.trim() : "";
   } catch {
     return NextResponse.json({ error: "Body bukan JSON yang valid" }, { status: 400 });
   }
 
+  const order = await getOrderById(id);
+  if (!order) {
+    return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 });
+  }
+
+  const payload = (order.payload ?? {}) as Record<string, unknown>;
+  const assetFolder = typeof payload.assetFolder === "string" ? payload.assetFolder : null;
+
+  const warnings: string[] = [];
+  let assetBase = manualAssetBase;
+
+  if (assetFolder) {
+    // The buyer uploaded through the form, so convert what they sent and point
+    // asset_base at the result. Reading from Storage rather than a request body
+    // keeps this clear of the 4.5 MB limit that rules out server side uploads.
+    try {
+      const result = await processOrderAssets(assetFolder);
+      warnings.push(...result.warnings);
+      assetBase = assetBaseUrl(assetFolder);
+
+      // Audio is never transcoded, so tell the template the real file name
+      // instead of renaming an m4a to music.mp3 and hoping it plays.
+      if (result.musicFileName && result.musicFileName !== "music.mp3") {
+        const supabase = getSupabase();
+        const nextPayload = { ...payload, resolvedMusicFile: result.musicFileName };
+        const { error } = await supabase
+          .from("orders")
+          .update({ payload: nextPayload })
+          .eq("id", id);
+        if (error) warnings.push("Gagal menyimpan nama berkas musik: " + error.message);
+      }
+
+      if (result.photoCount === 0 && !result.musicFileName) {
+        warnings.push("Tidak ada berkas yang berhasil diproses untuk pesanan ini.");
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "gagal";
+      return NextResponse.json(
+        { error: "Gagal memproses berkas pembeli: " + detail },
+        { status: 500 },
+      );
+    }
+  }
+
   if (!assetBase) {
     return NextResponse.json(
-      { error: "asset_base wajib diisi sebelum order diaktifkan" },
+      { error: "Pesanan ini tidak punya berkas terunggah. Isi asset base secara manual." },
       { status: 400 },
     );
   }
 
-  // The template builds URLs as ASSET_BASE + "image1.jpg", so a missing
-  // trailing slash silently produces ".../orderimage1.jpg". Normalise instead
-  // of leaving that as a trap for whoever fills the field at 1am.
+  // Templates build URLs as ASSET_BASE + "image1.jpg", so a missing trailing
+  // slash silently produces ".../orderimage1.jpg".
   const normalised = assetBase.endsWith("/") ? assetBase : assetBase + "/";
 
   try {
     // asset_base first: if this fails the order stays pending and can be
     // retried, which is safer than a paid order pointing at nothing.
     await setOrderAssetBase(id, normalised);
-    const order = await markOrderPaid(id);
+    const paid = await markOrderPaid(id);
 
     return NextResponse.json({
       ok: true,
-      orderSlug: order.order_slug,
-      status: order.status,
-      paidAt: order.paid_at,
+      orderSlug: paid.order_slug,
+      status: paid.status,
+      paidAt: paid.paid_at,
+      assetBase: normalised,
+      warnings,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal memproses order";

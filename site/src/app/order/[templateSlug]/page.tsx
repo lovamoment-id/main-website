@@ -63,7 +63,7 @@ export default async function OrderPage({
             Pesan {template.name}
           </h1>
           <p className="mt-2 text-text-muted">
-            Isi datanya di bawah. Pembayaran dan pengiriman foto dilakukan lewat WhatsApp
+            Isi datanya dan unggah fotonya di bawah. Pembayaran dilakukan lewat WhatsApp
             setelah ini.
           </p>
 
@@ -71,7 +71,6 @@ export default async function OrderPage({
             <OrderForm
               templateSlug={template.slug}
               schema={schema}
-              photoCount={template.photoCount}
               supportsMusic={template.supportsMusic}
             />
           </div>

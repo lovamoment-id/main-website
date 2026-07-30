@@ -15,6 +15,12 @@ export default function PendingOrderCard({
 }) {
   const router = useRouter();
   const [assetBase, setAssetBase] = useState(order.asset_base ?? "");
+
+  // Orders placed through the form carry an assetFolder, and the activate
+  // endpoint converts those uploads and fills asset_base itself. Only older
+  // orders, or ones whose upload failed, still need it typed in by hand.
+  const payload = (order.payload ?? {}) as Record<string, unknown>;
+  const hasUploads = typeof payload.assetFolder === "string" && payload.assetFolder.length > 0;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,10 +33,14 @@ export default function PendingOrderCard({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ assetBase }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; warnings?: string[] };
       if (!res.ok) {
         setError(data.error ?? "Gagal mengaktifkan pesanan.");
         return;
+      }
+      if (data.warnings && data.warnings.length > 0) {
+        // Activation succeeded but something about the files needs a human look.
+        setError("Aktif, tapi ada catatan: " + data.warnings.join(" "));
       }
       router.refresh();
     } catch {
@@ -102,23 +112,34 @@ export default function PendingOrderCard({
       )}
 
       <div className="mt-6 border-t border-primary/10 pt-5">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-text">
-            Asset base (URL folder aset pembeli)
-          </span>
-          <input
-            type="url"
-            inputMode="url"
-            value={assetBase}
-            onChange={(e) => setAssetBase(e.target.value)}
-            placeholder="https://contoh.supabase.co/storage/v1/object/public/orders/kode-order/"
-            className="rounded-xl border border-primary/20 bg-bg px-4 py-3 font-mono text-xs text-text outline-none focus:border-primary/50"
-          />
-          <span className="text-xs text-text-muted">
-            Template menyusun URL sebagai asset base ditambah image1.jpg, jadi ini harus
-            menunjuk ke folder. Garis miring di akhir ditambahkan otomatis kalau lupa.
-          </span>
-        </label>
+        {hasUploads ? (
+          <div className="rounded-xl bg-bg p-4">
+            <p className="text-sm font-medium text-text">Berkas sudah diunggah pembeli</p>
+            <p className="mt-1 text-xs leading-relaxed text-text-muted">
+              Saat diaktifkan, foto otomatis dikonversi ke JPG, diputar sesuai orientasi
+              aslinya, dikecilkan, lalu asset base diisi sendiri. Tidak perlu mengisi apa pun
+              di sini.
+            </p>
+          </div>
+        ) : (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-text">
+              Asset base (URL folder aset pembeli)
+            </span>
+            <input
+              type="url"
+              inputMode="url"
+              value={assetBase}
+              onChange={(e) => setAssetBase(e.target.value)}
+              placeholder="https://contoh.supabase.co/storage/v1/object/public/orders/kode-order/"
+              className="rounded-xl border border-primary/20 bg-bg px-4 py-3 font-mono text-xs text-text outline-none focus:border-primary/50"
+            />
+            <span className="text-xs text-text-muted">
+              Pesanan ini tidak punya berkas terunggah, jadi isi manual. Template menyusun URL
+              sebagai asset base ditambah image1.jpg, jadi ini harus menunjuk ke folder.
+            </span>
+          </label>
+        )}
 
         {error && (
           <p role="alert" className="mt-3 text-sm font-medium text-primary">
@@ -129,7 +150,7 @@ export default function PendingOrderCard({
         <button
           type="button"
           onClick={activate}
-          disabled={busy || assetBase.trim().length === 0}
+          disabled={busy || (!hasUploads && assetBase.trim().length === 0)}
           className="mt-4 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? "Memproses..." : "Tandai Lunas & Aktifkan"}

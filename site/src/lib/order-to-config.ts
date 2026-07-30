@@ -125,6 +125,14 @@ export function mapOrderToConfig(
     }
   }
 
+  // Audio is stored under its own extension because it is never transcoded, so
+  // templates that hardcode music.mp3 need pointing at the real name.
+  const resolvedMusic = asString(answers.resolvedMusicFile);
+  if (resolvedMusic) {
+    configFields.musicFile = resolvedMusic;
+    configFields.MUSIC_FILE = resolvedMusic; // the two 3D scenes use caps
+  }
+
   const recipientName = asString(answers[schema.recipientField]) ?? "";
 
   // Two derived values the buyer is never asked for directly.
