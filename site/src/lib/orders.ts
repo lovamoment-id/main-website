@@ -66,18 +66,79 @@ export async function generateOrderSlug(customerName: string): Promise<string> {
   );
 }
 
+/**
+ * Turn a buyer's requested page name into a usable slug.
+ *
+ * Lowercased, spaces become dashes, everything else that cannot sit in a URL
+ * is dropped. Returns null when nothing usable survives, so the caller falls
+ * back to a generated slug instead of creating an empty URL.
+ */
+export function normaliseCustomSlug(requested: string): string | null {
+  const cleaned = requested
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-") // spaces and punctuation all collapse to a dash
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+
+  // Unlike nameToSlugPart, no "order" fallback: an unusable request should
+  // fall back to a generated slug, not silently become /v/order.
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+/**
+ * Take the buyer's chosen page name if it is free, otherwise keep it and add a
+ * short random suffix.
+ *
+ * Appending beats rejecting here: the buyer already typed what they wanted,
+ * and "zia-dan-leo-k7mp" is closer to their intent than being sent back to the
+ * form to invent a different name.
+ */
+export async function resolveCustomSlug(requested: string): Promise<string> {
+  const base = normaliseCustomSlug(requested);
+  if (!base) throw new Error("Nama halaman tidak valid.");
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("order_slug", base)
+    .maybeSingle();
+
+  if (error) throw new Error("Gagal memeriksa nama halaman: " + error.message);
+  if (!data) return base;
+
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
+    const candidate = base + "-" + randomSuffix();
+    const check = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_slug", candidate)
+      .maybeSingle();
+    if (check.error) throw new Error("Gagal memeriksa nama halaman: " + check.error.message);
+    if (!check.data) return candidate;
+  }
+  throw new Error("Nama halaman itu sudah dipakai. Coba nama lain.");
+}
+
 export type CreateOrderInput = {
   templateSlug: string;
   customerName: string;
   customerWhatsapp: string;
   priceIdr: number;
   payload: OrderPayload;
+  /** Buyer's chosen page name. Falls back to a generated slug when empty. */
+  customSlug?: string;
 };
 
 /** Insert a pending order and return its slug. */
 export async function createOrder(input: CreateOrderInput): Promise<string> {
   const supabase = getSupabase();
-  const orderSlug = await generateOrderSlug(input.customerName);
+  const orderSlug = input.customSlug?.trim()
+    ? await resolveCustomSlug(input.customSlug)
+    : await generateOrderSlug(input.customerName);
 
   const { error } = await supabase.from("orders").insert({
     order_slug: orderSlug,

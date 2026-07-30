@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatRupiah, getCoverImage, getTemplateBySlug, templates, tierLabels } from "@/lib/templates";
+import { getSchema } from "@/lib/order-schema";
 import OrderForm from "./OrderForm";
 
 export function generateStaticParams() {
@@ -15,8 +16,9 @@ export default async function OrderPage({
 }) {
   const { templateSlug } = await params;
   const template = getTemplateBySlug(templateSlug);
+  const schema = getSchema(templateSlug);
 
-  if (!template) {
+  if (!template || !schema) {
     notFound();
   }
 
@@ -68,6 +70,7 @@ export default async function OrderPage({
           <div className="mt-8">
             <OrderForm
               templateSlug={template.slug}
+              schema={schema}
               photoCount={template.photoCount}
               supportsMusic={template.supportsMusic}
             />

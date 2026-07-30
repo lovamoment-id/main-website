@@ -2,9 +2,8 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { getOrderBySlug } from "@/lib/orders";
 import { getTemplateBySlug } from "@/lib/templates";
-
-/** The placeholder each template ships with (see Template/[slug]/index.html). */
-const ASSET_BASE_TOKEN = "__LOVAMOMENT_ASSET_BASE__";
+import { mapOrderToConfig } from "@/lib/order-to-config";
+import { renderTemplate } from "@/lib/render-template";
 
 /**
  * Serves a paid order's personalised template as raw HTML.
@@ -36,14 +35,7 @@ function htmlResponse(html: string, status: number): Response {
  * crafted value could close the string and run code, so escape rather than
  * assume the field is well formed.
  */
-function escapeForJsString(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/\r/g, "\\r")
-    .replace(/\n/g, "\\n")
-    .replace(/</g, "\\x3c"); // stops a literal </script> from ending the block
-}
+// Escaping now lives in lib/render-template.ts, shared with the tests.
 
 function notActivePage(): Response {
   return htmlResponse(
@@ -104,6 +96,18 @@ export async function GET(
     return htmlResponse("<!doctype html><title>500</title><h1>File template tidak terbaca</h1>", 500);
   }
 
-  const assetBase = escapeForJsString(order.asset_base ?? "");
-  return htmlResponse(html.split(ASSET_BASE_TOKEN).join(assetBase), 200);
+  // The buyer's answers overwrite the template's own CONFIG defaults, so a
+  // paid page shows their names and words rather than the demo content.
+  const answers = (order.payload ?? {}) as Record<string, unknown>;
+  const mapped = mapOrderToConfig(order.template_slug, answers);
+
+  return htmlResponse(
+    renderTemplate(html, {
+      assetBase: order.asset_base ?? "",
+      recipientName: mapped.recipientName,
+      configFields: mapped.configFields,
+      letterParagraphs: mapped.letterParagraphs,
+    }),
+    200,
+  );
 }

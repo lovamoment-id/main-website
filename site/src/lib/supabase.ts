@@ -28,13 +28,14 @@ export type OrderRow = {
   admin_note: string | null;
 };
 
-/** Free-form customisation captured by the public order form. */
-export type OrderPayload = {
-  recipientName: string;
-  senderName: string;
-  message: string;
-  notes?: string;
-};
+/**
+ * Answers captured by the public order form.
+ *
+ * Deliberately open ended: the questions differ per template (see
+ * lib/order-schema.ts), so the shape is validated against that schema on the
+ * way in rather than pinned down here.
+ */
+export type OrderPayload = Record<string, unknown>;
 
 let cached: SupabaseClient | null = null;
 
