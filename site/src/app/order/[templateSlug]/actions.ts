@@ -141,9 +141,11 @@ export async function submitOrder(
   }
 
   // Random folder, not derived from the order slug, so a guessable gift URL
-  // never reveals where the buyer's photos live.
+  // never reveals where the buyer's photos live. Recorded on the order only
+  // when there is something to put in it, because both the admin panel and the
+  // confirmation page read this key to decide whether files are expected.
   const assetFolder = newAssetFolder();
-  payload.assetFolder = assetFolder;
+  if (slots.length > 0) payload.assetFolder = assetFolder;
 
   let orderSlug: string;
   let tickets: UploadTicket[] = [];

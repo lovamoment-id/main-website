@@ -23,12 +23,20 @@ export default async function OrderConfirmationPage({
   const templateName = template?.name ?? order.template_slug;
   const price = order.price_idr ?? template?.price ?? 0;
 
+  // Buyers who used the upload fields have nothing left to send but the
+  // transfer receipt, so telling them to send photos over chat would be wrong.
+  const payload = (order.payload ?? {}) as Record<string, unknown>;
+  const hasUploads =
+    typeof payload.assetFolder === "string" && payload.assetFolder.length > 0;
+
   const waMessage =
     "Halo Lovamoment.id, aku baru pesan " +
     templateName +
     " dengan kode order " +
     order.order_slug +
-    ". Aku mau kirim foto, musik, dan bukti transfer.";
+    (hasUploads
+      ? ". Aku mau kirim bukti transfer."
+      : ". Aku mau kirim foto, musik, dan bukti transfer.");
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-14 sm:px-8">
@@ -56,6 +64,13 @@ export default async function OrderConfirmationPage({
           </div>
         </div>
 
+        {hasUploads && (
+          <p className="mt-4 text-sm leading-relaxed text-text-muted">
+            Foto dan musik yang kamu unggah sudah kami terima, jadi tidak perlu dikirim
+            ulang lewat WhatsApp.
+          </p>
+        )}
+
         <section className="mt-8">
           <h2 className="font-display text-lg font-semibold text-text">Cara membayar</h2>
           <ol className="mt-4 flex flex-col gap-4 text-sm leading-relaxed text-text-muted">
@@ -70,8 +85,10 @@ export default async function OrderConfirmationPage({
             <li className="flex gap-3">
               <span className="font-display text-base font-semibold text-primary">2</span>
               <span>
-                Kirim <span className="font-semibold text-text">bukti transfer</span>, foto,
-                dan lagu (kalau template ini pakai musik) ke WhatsApp yang sama.
+                Kirim <span className="font-semibold text-text">bukti transfer</span> ke
+                WhatsApp yang sama.
+                {!hasUploads &&
+                  " Sertakan juga foto dan lagu yang mau dipakai, kalau template ini memerlukannya."}
               </span>
             </li>
             <li className="flex gap-3">
